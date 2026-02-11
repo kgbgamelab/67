@@ -379,20 +379,43 @@ function createTree(x, z) {
     group.add(trunk); group.position.set(x, 0, z); scene.add(group);
 }
 
-const balloonCount = Math.max(1, compliments.length);
-for (let i = 0; i < balloonCount; i++) {
+function spawnBalloons() {
+    // на всякий случай чистим старые (если перезапускать)
+    balloons.forEach(b => scene.remove(b));
+    balloons = [];
+
+    // ВАЖНО: считать количество после loadLevelData()
+    const balloonCount = Math.max(1, compliments.length);
+
+    for (let i = 0; i < balloonCount; i++) {
         const grp = new THREE.Group();
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), new THREE.MeshLambertMaterial({color: 0xff0000}));
-        const box = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshLambertMaterial({color: 0xffff00}));
+
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 16, 16),
+            new THREE.MeshLambertMaterial({ color: 0xff0000 })
+        );
+
+        const box = new THREE.Mesh(
+            new THREE.BoxGeometry(0.8, 0.8, 0.8),
+            new THREE.MeshLambertMaterial({ color: 0xffff00 })
+        );
         box.position.y = -2;
-        const line = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2), new THREE.MeshBasicMaterial({color: 0xffffff}));
+
+        const line = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.02, 0.02, 2),
+            new THREE.MeshBasicMaterial({ color: 0xffffff })
+        );
         line.position.y = -1;
+
         grp.add(sphere, line, box);
-        grp.position.set(Math.random()*40-20, 6 + Math.random()*2, Math.random()*40-20);
+        grp.position.set(Math.random() * 40 - 20, 6 + Math.random() * 2, Math.random() * 40 - 20);
         grp.userData = { isBalloon: true };
+
         scene.add(grp);
         balloons.push(grp);
     }
+}
+
 
 function spawnCard(pos) {
     const card = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.5), new THREE.MeshLambertMaterial({color: 0xffffff}));
