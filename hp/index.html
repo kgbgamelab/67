@@ -2,424 +2,522 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>3D PARTY ENGINE</title>
+    <title>Minecraft Party: FULL EDITION</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'VT323', monospace; user-select: none; }
+        #hud { position: absolute; width: 100%; height: 100%; pointer-events: none; }
         
-        #ui-layer { position: absolute; top:0; left:0; width: 100%; height: 100%; pointer-events: none; }
-        
-        /* LOADING SCREEN */
-        #loader { 
-            position: absolute; top:0; left:0; width:100%; height:100%; background: #111; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; color: #0f0;
+        /* LOADING */
+        #loading { 
+            position: absolute; top:0; left:0; width:100%; height:100%; 
+            background: #111; color: #fff; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 9999;
         }
-        .load-spin { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #0f0; border-radius: 50%; animation: spin 1s infinite linear; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .bar { width: 300px; height: 20px; border: 2px solid #fff; margin-top: 10px; }
+        .fill { width: 100%; height: 100%; background: #00ff00; animation: load 2s linear infinite; }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
 
-        /* HUD */
-        #crosshair { 
-            position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; 
-            transform: translate(-50%, -50%); mix-blend-mode: difference; 
-        }
-        #crosshair::before { content:''; position: absolute; top: 9px; left: 0; width: 20px; height: 2px; background: #fff; }
-        #crosshair::after { content:''; position: absolute; top: 0; left: 9px; width: 2px; height: 20px; background: #fff; }
-
-        #card {
+        /* CARD */
+        #bday-card {
             display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9); border: 4px solid #fff; padding: 40px;
-            text-align: center; border-radius: 10px; pointer-events: auto; min-width: 300px;
+            background: rgba(0, 0, 0, 0.9); border: 6px solid #ff55ff; padding: 40px;
+            text-align: center; border-radius: 4px; box-shadow: 0 0 50px #ff55ff; pointer-events: auto; z-index: 1000;
         }
-        #card-msg { font-size: 40px; color: #ff0; text-shadow: 2px 2px #f00; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.2; }
-        .btn { 
-            background: #fff; color: #000; border: none; padding: 10px 20px; font-size: 24px; 
-            cursor: pointer; font-family: 'VT323'; text-transform: uppercase; 
+        #card-text { font-size: 50px; color: #ff00aa; text-shadow: 2px 2px 0 #000; margin-bottom: 20px; white-space: pre-wrap; }
+        .close-btn { 
+            padding: 10px 30px; font-size: 24px; cursor: pointer; background: #ff55ff; color: white; border: none; font-family: 'VT323'; 
         }
-        .btn:hover { background: #ff0; }
 
-        #stats { position: absolute; bottom: 20px; left: 20px; font-size: 30px; color: white; text-shadow: 2px 2px 0 #000; }
+        /* UI */
+        #house-status { position: absolute; top: 100px; width: 100%; text-align: center; font-size: 30px; color: #55ff55; display: none; text-shadow: 2px 2px #000; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+        #crosshair::before { content: ''; position: absolute; top: 11px; left: 0; width: 24px; height: 2px; background: white; }
+        #crosshair::after { content: ''; position: absolute; top: 0; left: 11px; width: 2px; height: 24px; background: white; }
+
+        #bottom-ui { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); width: 600px; text-align: center; }
+        .hearts { display: flex; gap: 4px; justify-content: center; margin-bottom: 5px; }
+        .heart { width: 32px; height: 32px; background: red; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 75%, 18% 100%, 0% 38%); }
         
-        /* Hearts animation in CSS (optional fallback) */
-        @keyframes floatHeart { 0% { transform: translateY(0); opacity:1; } 100% { transform: translateY(-50px); opacity:0; } }
+        #xp-bar { width: 100%; height: 16px; background: #222; border: 3px solid #000; position: relative; margin-bottom: 10px; }
+        #xp-fill { height: 100%; background: linear-gradient(to right, #00ff00, #55ff55); width: 0%; transition: width 0.2s; }
+        #xp-info { position: absolute; top: -35px; width: 100%; color: #80ff00; font-size: 30px; text-shadow: 2px 2px 0 #000; display: flex; justify-content: space-around; }
+        
+        #hotbar { display: flex; justify-content: center; gap: 4px; background: rgba(0,0,0,0.6); padding: 5px; border: 2px solid #fff; border-radius: 4px; }
+        .slot { width: 60px; height: 60px; background: #8b8b8b; border: 4px solid #373737; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; }
+        .slot.active { border-color: white; background: #a0a0a0; transform: scale(1.1); }
+
+        #damage-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: red; opacity: 0; pointer-events: none; transition: opacity 0.1s; }
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <div class="load-spin"></div>
-    <h2 style="margin-top:20px">LOADING WORLD...</h2>
-    <p style="color:#666; font-size: 14px;">(Click to Enable Audio)</p>
+<div id="loading">
+    <h1>GENERATING WORLD...</h1>
+    <div class="bar"><div class="fill"></div></div>
+    <p>CLICK TO START</p>
 </div>
 
-<div id="ui-layer">
+<div id="damage-overlay"></div>
+
+<div id="hud">
+    <div id="bday-card">
+        <div id="card-text">Happy Birthday!</div>
+        <button class="close-btn" onclick="closeCard()">THANKS!</button>
+    </div>
+    <div id="house-status">🏠 SAFE ZONE</div>
     <div id="crosshair"></div>
-    <div id="stats">SCORE: <span id="score">0</span></div>
-    <div id="card">
-        <div id="card-msg">...</div>
-        <button class="btn" onclick="closeCard()">AWESOME!</button>
+    <div id="bottom-ui">
+        <div id="xp-info"><span>XP: <span id="lvl-num">0</span></span></div>
+        <div class="hearts"><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div><div class="heart"></div></div>
+        <div id="xp-bar"><div id="xp-fill"></div></div>
+        <div id="hotbar">
+            <div class="slot active" id="slot-0">🔫</div>
+            <div class="slot" id="slot-1">🗡️</div>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- GLOBAL STATE ---
-    let config = { 
-        skyText: "LOADING...", 
-        balloons: ["TEST"], 
-        mode: 'google', 
-        googleSettings: { lang: 'en', pitch: 1, rate: 1 },
-        audioMap: {} 
-    };
+// ==========================================
+// 1. CONFIG & AUDIO ENGINE (HYBRID)
+// ==========================================
+let gameConfig = { 
+    skyText: "LOADING...", balloons: ["..."], 
+    mode: 'google', googleSettings: { lang: 'ru', pitch: 1, rate: 1 }, audioMap: {} 
+};
+const urlParams = new URLSearchParams(window.location.search);
+const gameId = urlParams.get('id');
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+// Heart texture for particles
+const heartCanvas = document.createElement('canvas'); heartCanvas.width=64; heartCanvas.height=64;
+const hCtx = heartCanvas.getContext('2d'); hCtx.font="50px serif"; hCtx.fillStyle="red"; hCtx.fillText("❤️", 0, 50);
+const heartTex = new THREE.CanvasTexture(heartCanvas);
 
-    // --- HEART TEXTURE ---
-    const heartCanvas = document.createElement('canvas'); heartCanvas.width = 32; heartCanvas.height = 32;
-    const hCtx = heartCanvas.getContext('2d');
-    hCtx.fillStyle = "red"; hCtx.font = "24px serif"; hCtx.fillText("❤️", 4, 24);
-    const heartTex = new THREE.CanvasTexture(heartCanvas);
-
-    // --- INIT ---
-    async function start() {
-        if(id) {
-            try {
-                const res = await fetch(`https://kgbgamelab.github.io/texts/data/${id}.json?nocache=${Date.now()}`);
-                if(res.ok) {
-                    const json = await res.json();
-                    config = json.data || json; 
-                }
-            } catch(e) { console.error(e); }
-        }
-        document.getElementById('loader').style.display = 'none';
-        init3D();
-    }
-
-    // --- AUDIO SYSTEM ---
-    function speak(text) {
-        if(config.audioMap && config.audioMap[text]) {
-            const snd = new Audio(config.audioMap[text]);
-            snd.play().catch(e => console.log("Audio block:", e));
-            return;
-        }
-        if(config.mode === 'google') {
-            const lang = config.googleSettings?.lang || 'en';
-            const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`;
-            const audio = new Audio(url);
-            if(config.googleSettings?.rate) audio.playbackRate = config.googleSettings.rate;
-            audio.play().catch(e => speakNative(text));
-            return;
-        }
-        speakNative(text);
-    }
-
-    function speakNative(text) {
-        if(!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        if(config.googleSettings) {
-            u.pitch = config.googleSettings.pitch || 1;
-            u.rate = config.googleSettings.rate || 1;
-            const voices = window.speechSynthesis.getVoices();
-            const v = voices.find(x => x.lang.includes(config.googleSettings.lang));
-            if(v) u.voice = v;
-        }
-        window.speechSynthesis.speak(u);
-    }
-
-    // --- 3D ENGINE ---
-    let scene, camera, renderer, weapon;
-    let particles = [], balloons = [], mobs = [];
-    let score = 0;
-    
-    // Physics & Controls
-    const move = { f:0, b:0, l:0, r:0, j:0, s:0 };
-    const player = { pos: new THREE.Vector3(0,2,0), vel: new THREE.Vector3(), onGround: false };
-    let yaw = 0, pitch = 0;
-    
-    // Procedural Textures
-    function getTex(c, type) {
-        const cvs = document.createElement('canvas'); cvs.width=64; cvs.height=64;
-        const ctx = cvs.getContext('2d');
-        ctx.fillStyle = c; ctx.fillRect(0,0,64,64);
-        for(let i=0;i<200;i++) {
-            ctx.fillStyle = `rgba(0,0,0,${Math.random()*0.2})`;
-            ctx.fillRect(Math.random()*64, Math.random()*64, 2, 2);
-        }
-        // Mob Face
-        if(type === 'face') {
-            ctx.fillStyle = '#222'; 
-            ctx.fillRect(10, 20, 10, 10); ctx.fillRect(44, 20, 10, 10); // Eyes
-            ctx.fillRect(20, 45, 24, 6); // Mouth
-        }
-        const t = new THREE.CanvasTexture(cvs); t.magFilter = THREE.NearestFilter;
-        return t;
-    }
-
-    function init3D() {
-        scene = new THREE.Scene(); 
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 20, 80);
-
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        
-        renderer = new THREE.WebGLRenderer({antialias: true});
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        document.body.appendChild(renderer.domElement);
-
-        const amb = new THREE.AmbientLight(0xffffff, 0.6); scene.add(amb);
-        const sun = new THREE.DirectionalLight(0xffffff, 0.6);
-        sun.position.set(50, 100, 50); sun.castShadow = true;
-        sun.shadow.mapSize.width = 1024; sun.shadow.mapSize.height = 1024;
-        scene.add(sun);
-
-        createWorld();
-        createWeapon();
-        spawnBalloons();
-        spawnMobs(10); // <--- MOBS ARE BACK!
-        createSkyBanner(config.skyText);
-
-        document.addEventListener('keydown', e => k(e.code, 1));
-        document.addEventListener('keyup', e => k(e.code, 0));
-        document.addEventListener('mousemove', e => {
-            if(document.pointerLockElement) {
-                yaw -= e.movementX * 0.002;
-                pitch -= e.movementY * 0.002;
-                pitch = Math.max(-1.5, Math.min(1.5, pitch));
-                camera.rotation.set(pitch, yaw, 0, 'YXZ');
+async function loadData() {
+    if(gameId) {
+        try {
+            const r = await fetch(`https://kgbgamelab.github.io/texts/data/${gameId}.json?nocache=${Date.now()}`);
+            if(r.ok) {
+                const j = await r.json();
+                gameConfig = j.data || j;
             }
-        });
-        document.addEventListener('mousedown', fire);
-        document.body.addEventListener('click', () => {
-             if(document.getElementById('card').style.display === 'none') document.body.requestPointerLock();
-        });
-
-        animate();
+        } catch(e) { console.error(e); }
     }
+    document.getElementById('loading').style.display = 'none';
+    init();
+}
 
-    function k(code, v) {
-        if(code==='KeyW') move.f=v; if(code==='KeyS') move.b=v;
-        if(code==='KeyA') move.l=v; if(code==='KeyD') move.r=v;
-        if(code==='Space') move.j=v; if(code==='ShiftLeft') move.s=v;
+function speak(text) {
+    // Priority 1: Baked Minimax Audio
+    if(gameConfig.audioMap && gameConfig.audioMap[text]) {
+        const snd = new Audio(gameConfig.audioMap[text]);
+        snd.play().catch(e=>console.log(e));
+        return;
     }
+    // Priority 2: Google TTS Hack
+    if(gameConfig.mode === 'google') {
+        const lang = gameConfig.googleSettings?.lang || 'ru';
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`;
+        const a = new Audio(url);
+        if(gameConfig.googleSettings?.rate) a.playbackRate = gameConfig.googleSettings.rate;
+        a.play().catch(e => speakNative(text)); // Fallback
+        return;
+    }
+    // Priority 3: Native
+    speakNative(text);
+}
 
-    function createWorld() {
-        const g = new THREE.PlaneGeometry(200, 200);
-        const m = new THREE.MeshLambertMaterial({ map: getTex('#5da34b') });
-        m.map.repeat.set(50,50); m.map.wrapS=m.map.wrapT=THREE.RepeatWrapping;
-        const floor = new THREE.Mesh(g, m);
-        floor.rotation.x = -Math.PI/2; floor.receiveShadow = true;
-        scene.add(floor);
+function speakNative(text) {
+    if(!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if(gameConfig.googleSettings) {
+        u.pitch = gameConfig.googleSettings.pitch || 1;
+        u.rate = gameConfig.googleSettings.rate || 1;
+    }
+    window.speechSynthesis.speak(u);
+}
 
-        for(let i=0; i<40; i++) {
-            const tree = new THREE.Group();
-            const t = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 1), new THREE.MeshLambertMaterial({ map: getTex('#5c4033') })); t.position.y=2; t.castShadow=true;
-            const l = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshLambertMaterial({ map: getTex('#2d5a27') })); l.position.y=5; l.castShadow=true;
-            tree.add(t, l);
-            tree.position.set(Math.random()*160-80, 0, Math.random()*160-80);
-            scene.add(tree);
+// ==========================================
+// 2. TEXTURE GENERATOR (PIXEL ART)
+// ==========================================
+function createTexture(type) {
+    const c = document.createElement('canvas'); c.width=64; c.height=64; const ctx = c.getContext('2d');
+    const noise = (color) => { ctx.fillStyle=color; ctx.fillRect(0,0,64,64); for(let i=0;i<400;i++){ ctx.fillStyle=`rgba(0,0,0,0.1)`; ctx.fillRect(Math.random()*64,Math.random()*64,2,2); }};
+    
+    if(type==='grass') { noise('#5da34b'); ctx.fillStyle='#4a8f3a'; for(let i=0;i<20;i++) ctx.fillRect(Math.random()*60,Math.random()*60,4,4); }
+    else if(type==='wood') { ctx.fillStyle='#5c4033'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#4a332a'; for(let i=1;i<4;i++) ctx.fillRect(i*16,0,4,64); }
+    else if(type==='leaves') { noise('#2d5a27'); ctx.fillStyle='#3e7a37'; for(let i=0;i<40;i++) ctx.fillRect(Math.random()*60,Math.random()*60,6,6); }
+    else if(type==='planks') { ctx.fillStyle='#a07040'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#000'; ctx.fillRect(0,20,64,1); ctx.fillRect(0,40,64,1); }
+    else if(type==='face') { noise('#bcaea5'); ctx.fillStyle='#222'; ctx.fillRect(10,20,12,12); ctx.fillRect(42,20,12,12); ctx.fillStyle='#633'; ctx.fillRect(20,45,24,6); }
+    else if(type==='skel') { ctx.fillStyle='#ddd'; ctx.fillRect(0,0,64,64); ctx.fillStyle='#222'; ctx.fillRect(10,20,15,15); ctx.fillRect(39,20,15,15); ctx.fillRect(25,50,14,5); }
+    
+    const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
+}
+const textures = { grass:createTexture('grass'), wood:createTexture('wood'), leaves:createTexture('leaves'), planks:createTexture('planks'), face:createTexture('face'), skel:createTexture('skel') };
+
+// ==========================================
+// 3. GAME ENGINE VARIABLES
+// ==========================================
+let scene, camera, renderer, weaponGroup;
+let score = 0, inventory = ['gun', 'sword'], activeSlot = 0;
+let targets=[], particles=[], balloons=[], cards=[], houses=[], mobs=[];
+let move = { f:0, b:0, l:0, r:0, j:0, s:0 };
+let player = { vel: new THREE.Vector3(), onGround:false, h:1.7, speed:10 };
+let pitch=0, yaw=0;
+let isSwinging=false, swingProgress=0;
+const clock = new THREE.Clock();
+
+function init() {
+    scene = new THREE.Scene(); scene.background = new THREE.Color(0x87CEEB); scene.fog = new THREE.Fog(0x87CEEB, 20, 80);
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000); camera.rotation.order='YXZ';
+    
+    renderer = new THREE.WebGLRenderer({antialias:false}); renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    // LIGHTS
+    const amb = new THREE.AmbientLight(0xffffff, 0.5); scene.add(amb);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(50, 100, 50); sun.castShadow = true;
+    sun.shadow.mapSize.width = 2048; sun.shadow.mapSize.height = 2048; scene.add(sun);
+
+    // WORLD GEN
+    createWorld();
+    setWeapon(0);
+    spawnBalloons();
+    createSkyText(gameConfig.skyText);
+    spawnMobs(15); // ZOMBIES AND SKELETONS
+
+    // EVENTS
+    document.addEventListener('keydown', e => {
+        if(e.key==='1') setWeapon(0); if(e.key==='2') setWeapon(1);
+        if(e.code==='KeyW') move.f=1; if(e.code==='KeyS') move.b=1;
+        if(e.code==='KeyA') move.l=1; if(e.code==='KeyD') move.r=1;
+        if(e.code==='Space') move.j=1; if(e.code==='ShiftLeft') move.s=1;
+    });
+    document.addEventListener('keyup', e => {
+        if(e.code==='KeyW') move.f=0; if(e.code==='KeyS') move.b=0;
+        if(e.code==='KeyA') move.l=0; if(e.code==='KeyD') move.r=0;
+        if(e.code==='Space') move.j=0; if(e.code==='ShiftLeft') move.s=0;
+    });
+    document.addEventListener('mousedown', attack);
+    document.addEventListener('mousemove', e => {
+        if(document.pointerLockElement) {
+            yaw -= e.movementX * 0.002; pitch -= e.movementY * 0.002;
+            pitch = Math.max(-1.5, Math.min(1.5, pitch));
+            camera.rotation.set(pitch, yaw, 0);
         }
-    }
+    });
+    document.body.addEventListener('click', () => { if(document.getElementById('bday-card').style.display==='none') document.body.requestPointerLock(); });
 
-    function spawnMobs(count) {
-        for(let i=0; i<count; i++) {
-            const mob = new THREE.Group();
-            const isZombie = Math.random()>0.5;
-            const color = isZombie ? '#69a859' : '#ddd';
-            const cloth = isZombie ? '#3344cc' : '#aaa';
-            
-            // Body parts
-            const matSkin = new THREE.MeshLambertMaterial({ map: getTex(color) });
-            const matCloth = new THREE.MeshLambertMaterial({ map: getTex(cloth) });
-            const matFace = new THREE.MeshLambertMaterial({ map: getTex(color, 'face') });
+    animate();
+}
 
-            const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.3), matCloth); body.position.y=1.1;
-            const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), [matSkin, matSkin, matSkin, matSkin, matFace, matSkin]); head.position.y=1.75;
-            
-            const legGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-            const lLeg = new THREE.Mesh(legGeo, matCloth); lLeg.position.set(-0.15, 0.35, 0);
-            const rLeg = new THREE.Mesh(legGeo, matCloth); rLeg.position.set(0.15, 0.35, 0);
-            
-            const armGeo = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-            const lArm = new THREE.Mesh(armGeo, matSkin); lArm.position.set(-0.45, 1.3, 0);
-            const rArm = new THREE.Mesh(armGeo, matSkin); rArm.position.set(0.45, 1.3, 0);
-            
-            // PARTY HAT
-            const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.5, 16), new THREE.MeshLambertMaterial({color: Math.random()*0xffffff}));
-            hat.position.y = 2.1; hat.rotation.x = -0.2;
+// ==========================================
+// 4. WORLD GENERATION
+// ==========================================
+function createWorld() {
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshLambertMaterial({map:textures.grass}));
+    floor.rotation.x = -Math.PI/2; floor.receiveShadow=true; 
+    floor.material.map.repeat.set(50,50); floor.material.map.wrapS=THREE.RepeatWrapping; floor.material.map.wrapT=THREE.RepeatWrapping;
+    scene.add(floor);
 
-            mob.add(body, head, lLeg, rLeg, lArm, rArm, hat);
-            mob.position.set(Math.random()*60-30, 0, Math.random()*60-30);
-            
-            mob.userData = { 
-                type: 'mob', 
-                parts: { lLeg, rLeg, lArm, rArm }, 
-                walkTime: Math.random()*100,
-                speed: 0.03 + Math.random()*0.02
-            };
-            
-            mobs.push(mob);
-            scene.add(mob);
-        }
-    }
+    // HOUSES (Collision Objects)
+    createHouse(20, 0, 20); createHouse(-30, 0, -30); createHouse(40, 0, -10);
 
-    function createSkyBanner(txt) {
-        const cvs = document.createElement('canvas'); cvs.width=1024; cvs.height=256;
-        const ctx = cvs.getContext('2d');
-        const isAsian = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(txt);
-        ctx.font = isAsian ? 'bold 80px sans-serif' : 'bold 80px "VT323", monospace';
-        ctx.textAlign='center'; ctx.textBaseline='middle';
-        ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(txt, 517, 133);
-        ctx.fillStyle='#fff'; ctx.fillText(txt, 512, 128);
-        const map = new THREE.CanvasTexture(cvs);
-        const banner = new THREE.Mesh(new THREE.PlaneGeometry(50, 12), new THREE.MeshBasicMaterial({map:map, transparent:true, side:2}));
-        banner.position.set(0, 30, -50); banner.lookAt(0,0,0);
-        scene.add(banner);
-    }
-
-    function createWeapon() {
-        weapon = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 1), new THREE.MeshLambertMaterial({color: 0x333}));
-        body.position.set(0.5, -0.5, -1);
-        weapon.add(body);
-        scene.add(weapon);
-    }
-
-    function spawnBalloons() {
-        balloons.forEach(b => scene.remove(b)); balloons=[];
-        const texts = config.balloons && config.balloons.length ? config.balloons : ["!"];
-        texts.forEach((t, i) => {
+    // TREES
+    for(let i=0; i<50; i++) {
+        const x = Math.random()*160-80, z = Math.random()*160-80;
+        if(Math.abs(x)>10 || Math.abs(z)>10) {
             const grp = new THREE.Group();
-            const mat = new THREE.MeshPhongMaterial({color: Math.random()*0xffffff, specular: 0x111111, shininess: 50});
-            const b = new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 32), mat);
-            const str = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,3), new THREE.MeshBasicMaterial({color:0xffffff}));
-            str.position.y = -2;
-            grp.add(b, str);
-            grp.position.set(Math.random()*60-30, 8+Math.random()*5, Math.random()*60-30);
-            grp.userData = { text: t, isBalloon: true };
-            scene.add(grp);
-            balloons.push(grp);
-        });
-    }
-
-    function fire() {
-        if(document.pointerLockElement !== document.body) return;
-        weapon.children[0].position.z += 0.2; // Recoil
-        const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), camera);
-        const hits = ray.intersectObjects(scene.children, true);
-        if(hits.length > 0) {
-            let obj = hits[0].object; while(obj.parent && obj.parent.type !== 'Scene') obj = obj.parent;
-            if(obj.userData.isBalloon) {
-                pop(obj);
-            }
+            const trunk = new THREE.Mesh(new THREE.BoxGeometry(1,5,1), new THREE.MeshLambertMaterial({map:textures.wood})); trunk.position.y=2.5; trunk.castShadow=true;
+            const leaves = new THREE.Mesh(new THREE.BoxGeometry(3,3,3), new THREE.MeshLambertMaterial({map:textures.leaves})); leaves.position.y=5; leaves.castShadow=true;
+            grp.add(trunk, leaves); grp.position.set(x,0,z); scene.add(grp);
         }
     }
+}
 
-    function pop(obj) {
-        const osc = (new (window.AudioContext||window.webkitAudioContext)()).createOscillator();
-        osc.connect((new (window.AudioContext||window.webkitAudioContext)()).destination);
-        osc.frequency.setValueAtTime(400,0); osc.frequency.exponentialRampToValueAtTime(10, 0.1);
-        osc.start(); osc.stop(0.1);
-        spawnParticles(obj.position, 0xffff00);
-        speak(obj.userData.text);
-        showCard(obj.userData.text);
-        scene.remove(obj);
-        balloons = balloons.filter(b => b!==obj);
-        score+=100; document.getElementById('score').innerText = score;
-        if(balloons.length === 0) setTimeout(spawnBalloons, 3000);
-    }
-
-    function spawnParticles(pos, col, isHeart) {
-        for(let i=0; i<10; i++) {
-            let p;
-            if(isHeart) {
-                 p = new THREE.Sprite(new THREE.SpriteMaterial({map: heartTex}));
-                 p.scale.set(0.8,0.8,1);
-            } else {
-                 p = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshBasicMaterial({color:col}));
-            }
-            p.position.copy(pos);
-            particles.push({m:p, v:new THREE.Vector3((Math.random()-.5), Math.random(), (Math.random()-.5))});
-            scene.add(p);
-        }
-    }
-
-    function showCard(msg) {
-        document.getElementById('card-msg').innerText = msg;
-        document.getElementById('card').style.display = 'block';
-        document.exitPointerLock();
-    }
-    window.closeCard = function() {
-        document.getElementById('card').style.display = 'none';
-        document.body.requestPointerLock();
-    };
-
-    function animate() {
-        requestAnimationFrame(animate);
-        const dt = 0.016;
-        
-        // Player Physics
-        const dir = new THREE.Vector3();
-        const fwd = new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(0,yaw,0));
-        const right = new THREE.Vector3(1,0,0).applyEuler(new THREE.Euler(0,yaw,0));
-        if(move.f) dir.add(fwd); if(move.b) dir.sub(fwd);
-        if(move.r) dir.add(right); if(move.l) dir.sub(right);
-        if(dir.length()>0) dir.normalize().multiplyScalar(10 * dt);
-        player.vel.x = dir.x * 10; player.vel.z = dir.z * 10;
-        if(player.onGround && move.j) { player.vel.y = 10; player.onGround = false; }
-        player.vel.y -= 20 * dt;
-        player.pos.addScaledVector(player.vel, dt);
-        if(player.pos.y < 2) { player.pos.y = 2; player.vel.y = 0; player.onGround = true; }
-        camera.position.copy(player.pos);
-        camera.rotation.set(pitch, yaw, 0, 'YXZ');
-
-        // Mobs Logic
-        mobs.forEach(m => {
-            const dist = m.position.distanceTo(player.pos);
-            const parts = m.userData.parts;
-            m.userData.walkTime += dt * 5;
-            
-            if(dist < 3) {
-                // Love Mode
-                m.lookAt(player.pos.x, 0, player.pos.z);
-                // "Kiss"
-                if(Math.random() < 0.02) spawnParticles(m.position.clone().add(new THREE.Vector3(0,2,0)), 0xff0000, true);
-                // Stop walking legs
-                parts.lLeg.rotation.x = 0; parts.rLeg.rotation.x = 0;
-            } else {
-                // Random Walk
-                m.translateZ(m.userData.speed);
-                m.rotation.y += Math.sin(Date.now()*0.001 + m.position.x)*0.02;
-                // Animate Legs
-                parts.lLeg.rotation.x = Math.sin(m.userData.walkTime);
-                parts.rLeg.rotation.x = -Math.sin(m.userData.walkTime);
-                parts.lArm.rotation.x = -Math.sin(m.userData.walkTime);
-                parts.rArm.rotation.x = Math.sin(m.userData.walkTime);
-            }
-        });
-
-        // Weapon Sway
-        weapon.position.copy(camera.position); weapon.quaternion.copy(camera.quaternion);
-        weapon.translateY(Math.sin(Date.now()*0.005)*0.02 - 0.5); 
-        weapon.translateZ(Math.cos(Date.now()*0.005)*0.01 - 0.5);
-        weapon.translateX(0.5);
-        if(weapon.children[0].position.z > -1) weapon.children[0].position.z -= 0.05;
-
-        // Particles
-        particles.forEach((p, i) => {
-            p.m.position.addScaledVector(p.v, 0.2);
-            p.v.y += 0.02; // Hearts float up
-            p.m.scale.multiplyScalar(0.95);
-            if(p.m.scale.x < 0.01) { scene.remove(p.m); particles.splice(i, 1); }
-        });
-
-        // Balloons bob
-        balloons.forEach(b => b.position.y += Math.sin(Date.now()*0.002 + b.position.x)*0.01);
-        renderer.render(scene, camera);
-    }
+function createHouse(x, y, z) {
+    const grp = new THREE.Group();
+    const wMat = new THREE.MeshLambertMaterial({map:textures.planks});
+    // Walls
+    const w1 = new THREE.Mesh(new THREE.BoxGeometry(8,4,0.5), wMat); w1.position.set(0,2,-3.75);
+    const w2 = new THREE.Mesh(new THREE.BoxGeometry(8,4,0.5), wMat); w2.position.set(0,2,3.75);
+    const w3 = new THREE.Mesh(new THREE.BoxGeometry(0.5,4,8), wMat); w3.position.set(-3.75,2,0);
+    const w4a = new THREE.Mesh(new THREE.BoxGeometry(0.5,4,3), wMat); w4a.position.set(3.75,2,-2.5);
+    const w4b = new THREE.Mesh(new THREE.BoxGeometry(0.5,4,3), wMat); w4b.position.set(3.75,2,2.5);
+    // Roof
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(7,3,4), new THREE.MeshLambertMaterial({color:0x5a3a22})); 
+    roof.position.y=5.5; roof.rotation.y=Math.PI/4;
+    // Bed
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(2,0.5,3), new THREE.MeshLambertMaterial({color:0xcc0000})); bed.position.set(-2,0.25,-2);
     
-    start();
+    grp.add(w1,w2,w3,w4a,w4b,roof,bed);
+    grp.position.set(x,y,z);
+    scene.add(grp);
+    
+    // Collision Box
+    houses.push({
+        minX: x-4, maxX: x+4,
+        minZ: z-4, maxZ: z+4
+    });
+}
+
+function createSkyText(txt) {
+    const c = document.createElement('canvas'); c.width=1024; c.height=256;
+    const ctx = c.getContext('2d');
+    const isAsian = /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(txt);
+    ctx.font = isAsian ? 'bold 80px sans-serif' : 'bold 80px "VT323", monospace';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillText(txt, 517, 133);
+    ctx.fillStyle='#fff'; ctx.fillText(txt, 512, 128);
+    const mat = new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c), transparent:true, side:2});
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(60,15), mat);
+    m.position.set(0,40,-60); m.lookAt(0,0,0);
+    scene.add(m);
+}
+
+// ==========================================
+// 5. MOBS (ZOMBIES & SKELETONS WITH HATS)
+// ==========================================
+function spawnMobs(count) {
+    for(let i=0; i<count; i++) {
+        const type = Math.random()>0.5 ? 'zombie' : 'skel';
+        const mob = new THREE.Group();
+        const mat = new THREE.MeshLambertMaterial({map: type==='zombie'?textures.face:textures.skel});
+        const clothes = new THREE.MeshLambertMaterial({color: type==='zombie'?0x0000ff:0xcccccc});
+        
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.9,0.3), clothes); body.position.y=1.1;
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), [mat,mat,mat,mat,mat,mat]); head.position.y=1.8;
+        const lArm = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.8,0.2), clothes); lArm.position.set(-0.4,1.3,0);
+        const rArm = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.8,0.2), clothes); rArm.position.set(0.4,1.3,0);
+        const lLeg = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.8,0.2), clothes); lLeg.position.set(-0.15,0.4,0);
+        const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.8,0.2), clothes); rLeg.position.set(0.15,0.4,0);
+        
+        // PARTY HAT
+        const hat = new THREE.Mesh(new THREE.ConeGeometry(0.2,0.5,16), new THREE.MeshLambertMaterial({color:Math.random()*0xffffff}));
+        hat.position.set(0,2.1,0); hat.rotation.x=-0.2;
+        
+        mob.add(body,head,lArm,rArm,lLeg,rLeg,hat);
+        mob.position.set(Math.random()*80-40, 0, Math.random()*80-40);
+        
+        mob.userData = { 
+            type: 'mob',
+            parts: {lArm, rArm, lLeg, rLeg}, 
+            phase: Math.random()*100, 
+            dir: new THREE.Vector3(Math.random()-.5,0,Math.random()-.5).normalize() 
+        };
+        scene.add(mob);
+        mobs.push(mob);
+    }
+}
+
+// ==========================================
+// 6. WEAPONS & BALLOONS
+// ==========================================
+function setWeapon(idx) {
+    activeSlot = idx;
+    if(weaponGroup) scene.remove(weaponGroup);
+    weaponGroup = new THREE.Group();
+    
+    document.querySelectorAll('.slot').forEach((s,i) => i===idx ? s.classList.add('active') : s.classList.remove('active'));
+
+    if(inventory[idx] === 'gun') {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.8), new THREE.MeshLambertMaterial({color:0x333}));
+        weaponGroup.add(b);
+        weaponGroup.position.set(0.5,-0.5,-1);
+    } else { // Sword
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.8,0.05), new THREE.MeshLambertMaterial({color:0x00ffff})); blade.position.y=0.4;
+        const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.05,0.1), new THREE.MeshLambertMaterial({color:0x550000}));
+        const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.3,0.1), new THREE.MeshLambertMaterial({color:0x330000})); handle.position.y=-0.15;
+        weaponGroup.add(blade,hilt,handle);
+        weaponGroup.position.set(0.5,-0.5,-1);
+        weaponGroup.rotation.x = Math.PI/4;
+    }
+    scene.add(weaponGroup);
+}
+
+function spawnBalloons() {
+    balloons.forEach(b=>scene.remove(b)); balloons=[];
+    const txts = gameConfig.balloons || ["!!!"];
+    txts.forEach(t => {
+        const g = new THREE.Group();
+        const b = new THREE.Mesh(new THREE.SphereGeometry(1,32,32), new THREE.MeshPhongMaterial({color:Math.random()*0xffffff, specular:0x555555}));
+        const s = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,2), new THREE.MeshBasicMaterial({color:0xffffff})); s.position.y=-1.5;
+        g.add(b,s);
+        g.position.set(Math.random()*80-40, 5+Math.random()*5, Math.random()*80-40);
+        g.userData = {isBalloon:true, text:t};
+        scene.add(g);
+        balloons.push(g);
+    });
+}
+
+function attack() {
+    if(isSwinging) return;
+    isSwinging=true; swingProgress=0;
+    
+    // SFX
+    const osc = (new (window.AudioContext||window.webkitAudioContext)()).createOscillator();
+    osc.connect((new (window.AudioContext||window.webkitAudioContext)()).destination);
+    osc.frequency.setValueAtTime(inventory[activeSlot]==='gun'?800:200, 0); 
+    osc.frequency.exponentialRampToValueAtTime(100, 0.1);
+    osc.start(); osc.stop(0.1);
+
+    const ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2(0,0), camera);
+    const hits = ray.intersectObjects(scene.children, true);
+    
+    if(hits.length > 0) {
+        let obj = hits[0].object; while(obj.parent && obj.parent.type !== 'Scene') obj = obj.parent;
+        
+        if(obj.userData.isBalloon) {
+            popBalloon(obj);
+        } else if(obj.userData.isCard) {
+            showCard(obj.userData.text); speak(obj.userData.text);
+            scene.remove(obj);
+        }
+    }
+}
+
+function popBalloon(obj) {
+    spawnParticles(obj.position, 0xffff00, false);
+    spawnCard(obj.position, obj.userData.text);
+    scene.remove(obj);
+    balloons = balloons.filter(b=>b!==obj);
+    score+=100; document.getElementById('lvl-num').innerText = score;
+    document.getElementById('xp-fill').style.width = (score%1000)/10 + '%';
+    if(balloons.length===0) setTimeout(spawnBalloons, 2000);
+}
+
+function spawnCard(pos, txt) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(1,0.1,0.7), new THREE.MeshLambertMaterial({color:0xffffff}));
+    c.position.copy(pos); c.userData={isCard:true, text:txt};
+    scene.add(c); cards.push(c);
+}
+
+function spawnParticles(pos, col, isHeart) {
+    for(let i=0; i<10; i++) {
+        let p;
+        if(isHeart) { p = new THREE.Sprite(new THREE.SpriteMaterial({map:heartTex})); p.scale.set(0.5,0.5,1); }
+        else { p = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.2), new THREE.MeshBasicMaterial({color:col})); }
+        p.position.copy(pos);
+        particles.push({m:p, v:new THREE.Vector3((Math.random()-.5), Math.random(), (Math.random()-.5)), life:1.0});
+        scene.add(p);
+    }
+}
+
+// ==========================================
+// 7. PHYSICS & GAME LOOP
+// ==========================================
+function updatePhysics(dt) {
+    const dir = new THREE.Vector3();
+    const fwd = new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(0,yaw,0));
+    const right = new THREE.Vector3(1,0,0).applyEuler(new THREE.Euler(0,yaw,0));
+    
+    if(move.f) dir.add(fwd); if(move.b) dir.sub(fwd);
+    if(move.r) dir.add(right); if(move.l) dir.sub(right);
+    
+    const speed = move.s ? 15 : 8;
+    if(dir.length()>0) dir.normalize().multiplyScalar(speed * dt);
+    
+    // Attempt Move X
+    let nextX = player.pos.x + dir.x;
+    if(!checkColl(nextX, player.pos.z)) player.pos.x = nextX;
+    
+    // Attempt Move Z
+    let nextZ = player.pos.z + dir.z;
+    if(!checkColl(player.pos.x, nextZ)) player.pos.z = nextZ;
+
+    // Gravity
+    if(player.onGround && move.j) { player.vel.y = 10; player.onGround = false; }
+    player.vel.y -= 25 * dt;
+    player.pos.y += player.vel.y * dt;
+    
+    if(player.pos.y < 1.7) { player.pos.y = 1.7; player.vel.y = 0; player.onGround = true; }
+    
+    camera.position.copy(player.pos);
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    
+    // House Safe Zone UI
+    let safe = false;
+    for(let h of houses) if(player.pos.x > h.minX && player.pos.x < h.maxX && player.pos.z > h.minZ && player.pos.z < h.maxZ) safe=true;
+    document.getElementById('house-status').style.display = safe ? 'block' : 'none';
+}
+
+function checkColl(x, z) {
+    for(let h of houses) {
+        if(x > h.minX && x < h.maxX && z > h.minZ && z < h.maxZ) return true;
+    }
+    return false;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = 0.016;
+    updatePhysics(dt);
+
+    // Mobs
+    mobs.forEach(m => {
+        const d = m.position.distanceTo(player.pos);
+        m.userData.phase += dt*5;
+        const p = m.userData.parts;
+        
+        if(d < 4) { // LOVE MODE
+            m.lookAt(player.pos.x, 0, player.pos.z);
+            if(Math.random()<0.02) spawnParticles(m.position.clone().add(new THREE.Vector3(0,2,0)), 0, true);
+            p.lArm.rotation.x = -Math.PI/2 + Math.sin(m.userData.phase)*0.2; // Hugging
+            p.rArm.rotation.x = -Math.PI/2 - Math.sin(m.userData.phase)*0.2;
+        } else { // WANDER
+            m.translateZ(dt * 2);
+            m.rotation.y += Math.sin(Date.now()*0.001 + m.position.x)*0.01;
+            p.lLeg.rotation.x = Math.sin(m.userData.phase);
+            p.rLeg.rotation.x = -Math.sin(m.userData.phase);
+            p.lArm.rotation.x = Math.sin(m.userData.phase);
+            p.rArm.rotation.x = -Math.sin(m.userData.phase);
+        }
+    });
+
+    // Weapon Animation
+    if(weaponGroup) {
+        weaponGroup.position.copy(camera.position); weaponGroup.quaternion.copy(camera.quaternion);
+        weaponGroup.translateY(-0.3 + Math.sin(Date.now()*0.005)*0.02); 
+        weaponGroup.translateZ(-0.5); weaponGroup.translateX(0.4);
+        
+        if(isSwinging) {
+            swingProgress += dt*15;
+            if(inventory[activeSlot]==='sword') weaponGroup.rotateX(-Math.sin(swingProgress));
+            else weaponGroup.translateZ(Math.sin(swingProgress)*0.2); // Recoil
+            if(swingProgress >= Math.PI) { isSwinging=false; weaponGroup.rotation.x=0; }
+        }
+    }
+
+    // Particles
+    for(let i=particles.length-1; i>=0; i--) {
+        let p = particles[i];
+        p.m.position.addScaledVector(p.v, dt*5); p.v.y -= dt*2;
+        p.life -= dt;
+        p.m.scale.multiplyScalar(0.95);
+        if(p.life <= 0) { scene.remove(p.m); particles.splice(i,1); }
+    }
+
+    balloons.forEach(b => b.position.y += Math.sin(Date.now()*0.002 + b.position.x)*0.01);
+    
+    renderer.render(scene, camera);
+}
+
+// CARD UI
+function showCard(msg) {
+    document.getElementById('card-text').innerText = msg;
+    document.getElementById('bday-card').style.display = 'block';
+    document.exitPointerLock();
+}
+window.closeCard = function() {
+    document.getElementById('bday-card').style.display = 'none';
+    document.body.requestPointerLock();
+};
+
+loadData();
 </script>
 </body>
 </html>
