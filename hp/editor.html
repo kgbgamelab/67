@@ -2,16 +2,15 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ULTIMATE PARTY EDITOR</title>
+    <title>ULTIMATE PARTY EDITOR (FIXED)</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=VT323&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #ff00ff; --sec: #00ffff; --bg: #120520; --panel: #1e0a2e; }
+        :root { --main: #ff00ff; --sec: #00ffff; --bg: #120520; }
         body { 
             background: var(--bg); color: white; font-family: 'Montserrat', sans-serif;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin:0; padding: 20px;
-            background-image: 
-                linear-gradient(rgba(255, 0, 255, 0.1) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(255, 0, 255, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
             background-size: 40px 40px;
         }
         h1 { 
@@ -19,27 +18,21 @@
             text-transform: uppercase; letter-spacing: 4px;
             text-shadow: 3px 3px 0 var(--sec), -3px -3px 0 var(--main);
         }
-        
         .container {
             display: flex; gap: 30px; width: 1100px; max-width: 95%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 30px;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); padding: 30px;
             border: 2px solid var(--main); border-radius: 20px;
-            box-shadow: 0 0 50px rgba(255, 0, 255, 0.3);
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.2);
         }
-        
         .col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        
         h2 { font-family: 'VT323'; color: var(--sec); border-bottom: 2px solid #444; margin: 0; padding-bottom: 10px; font-size: 30px; }
-        
         label { display: block; font-size: 14px; color: #aaa; margin-bottom: 5px; font-weight: bold; }
         input, textarea, select {
             width: 100%; background: #0a0510; border: 2px solid #442255; color: white; padding: 15px;
             font-family: 'VT323'; font-size: 22px; border-radius: 8px; box-sizing: border-box;
-            transition: 0.2s;
         }
-        input:focus, textarea:focus, select:focus { border-color: var(--sec); outline: none; box-shadow: 0 0 15px var(--sec); }
-
-        /* TAB SWITCHER */
+        input:focus, textarea:focus, select:focus { border-color: var(--sec); outline: none; }
+        
         .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
         .tab { 
             flex: 1; padding: 10px; background: #221133; border: 1px solid #442255; cursor: pointer; 
@@ -47,35 +40,21 @@
         }
         .tab.active { background: var(--main); color: white; border-color: white; box-shadow: 0 0 15px var(--main); }
         .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .tab-content.active { display: block; }
 
-        /* EMOTION BUTTONS */
         .emo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .emo-btn {
             background: #221133; border: 1px solid var(--sec); color: var(--sec); padding: 10px;
-            cursor: pointer; font-family: 'VT323'; font-size: 20px; border-radius: 5px;
-            transition: 0.2s;
+            cursor: pointer; font-family: 'VT323'; font-size: 20px; border-radius: 5px; transition: 0.2s;
         }
-        .emo-btn:hover { background: var(--sec); color: black; }
-        .emo-btn.active { background: var(--sec); color: black; font-weight: bold; box-shadow: 0 0 10px var(--sec); }
+        .emo-btn.active { background: var(--sec); color: black; font-weight: bold; }
 
-        /* MAIN BUTTONS */
-        .test-btn {
-            background: #333; color: white; border: none; padding: 15px; width: 100%; cursor: pointer;
-            font-weight: bold; border-radius: 8px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .test-btn:hover { background: #555; }
-
+        .test-btn { background: #333; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 8px; margin-top: 10px; }
         .pub-btn {
             background: linear-gradient(45deg, var(--main), var(--sec)); color: black; border: none;
             padding: 20px; font-size: 24px; font-weight: 900; width: 100%; cursor: pointer;
             border-radius: 10px; margin-top: 20px; text-transform: uppercase;
-            box-shadow: 0 5px 20px rgba(255, 0, 255, 0.4); transition: 0.2s;
         }
-        .pub-btn:hover { transform: scale(1.02); filter: brightness(1.2); }
-        .pub-btn:disabled { filter: grayscale(1); cursor: wait; }
-
         #output { margin-top: 20px; display: none; background: black; padding: 15px; border-radius: 10px; border: 1px dashed var(--sec); }
         #status { text-align: center; color: var(--sec); margin-top: 10px; font-weight: bold; }
     </style>
@@ -87,14 +66,9 @@
 <div class="container">
     <div class="col">
         <h2>1. НАПОЛНЕНИЕ</h2>
-        
-        <div>
-            <label>Текст в небе (Заголовок):</label>
-            <input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!">
-        </div>
-
+        <div><label>Текст в небе:</label><input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!"></div>
         <div style="flex:1; display:flex; flex-direction:column;">
-            <label>Фразы в шариках (по одной в строке):</label>
+            <label>Фразы (по одной в строке):</label>
             <textarea id="balloons" style="flex:1; resize:none;">Ты лучший!
 Удачи во всем!
 Будь счастлив!
@@ -104,26 +78,25 @@ Level Up!</textarea>
 
     <div class="col">
         <h2>2. НАСТРОЙКИ ГОЛОСА</h2>
-        
         <div class="tabs">
             <div class="tab active" onclick="switchTab('google', this)">GOOGLE (БЕСПЛАТНО)</div>
             <div class="tab" onclick="switchTab('minimax', this)">MINIMAX (API)</div>
         </div>
 
         <div id="tab-google" class="tab-content active">
-            <label>Язык озвучки:</label>
+            <label>Язык:</label>
             <select id="gLang">
-                <option value="ru">🇷🇺 Русский (Russian)</option>
-                <option value="en">🇺🇸 Английский (English)</option>
-                <option value="de">🇩🇪 Немецкий (German)</option>
-                <option value="fr">🇫🇷 Французский (French)</option>
-                <option value="es">🇪🇸 Испанский (Spanish)</option>
-                <option value="it">🇮🇹 Итальянский (Italian)</option>
-                <option value="zh-CN">🇨🇳 Китайский (Chinese)</option>
-                <option value="ja">🇯🇵 Японский (Japanese)</option>
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="en">🇺🇸 Английский</option>
+                <option value="de">🇩🇪 Немецкий</option>
+                <option value="fr">🇫🇷 Французский</option>
+                <option value="es">🇪🇸 Испанский</option>
+                <option value="it">🇮🇹 Итальянский</option>
+                <option value="zh-CN">🇨🇳 Китайский</option>
+                <option value="ja">🇯🇵 Японский</option>
             </select>
 
-            <label style="margin-top:15px">Эмоция / Интонация:</label>
+            <label style="margin-top:15px">Интонация:</label>
             <div class="emo-grid">
                 <div class="emo-btn active" onclick="setPreset(1, 1, this)">😐 Обычный</div>
                 <div class="emo-btn" onclick="setPreset(1.2, 1.1, this)">😄 Радость</div>
@@ -133,18 +106,14 @@ Level Up!</textarea>
             
             <input type="hidden" id="gPitch" value="1">
             <input type="hidden" id="gRate" value="1">
-
-            <button class="test-btn" onclick="testGoogle()">🔊 ПРОСЛУШАТЬ (ТЕСТ)</button>
+            <button class="test-btn" onclick="testGoogleChain()">🔊 ПРОСЛУШАТЬ (ТЕСТ)</button>
         </div>
 
         <div id="tab-minimax" class="tab-content">
-            <label>API Key:</label>
-            <input type="password" id="mmKey" placeholder="Введите ключ Minimax...">
-            <label>Group ID:</label>
-            <input type="text" id="mmGroup">
-            <label>Voice ID:</label>
-            <input type="text" id="mmVoice" value="male-qn-qingse">
-            <button class="test-btn" onclick="testMinimax()">🔊 ТЕСТ (СПИШЕТ ТОКЕНЫ)</button>
+            <label>API Key:</label><input type="password" id="mmKey" placeholder="Ключ Minimax...">
+            <label>Group ID:</label><input type="text" id="mmGroup">
+            <label>Voice ID:</label><input type="text" id="mmVoice" value="male-qn-qingse">
+            <button class="test-btn" onclick="testMinimax()">🔊 ТЕСТ (API)</button>
         </div>
 
         <button id="pubBtn" class="pub-btn" onclick="publish()">🎁 СОЗДАТЬ ИГРУ</button>
@@ -153,31 +122,24 @@ Level Up!</textarea>
 </div>
 
 <div id="output" style="width: 1100px; max-width: 95%;">
-    <label style="color:var(--sec)">ВАША ССЫЛКА ГОТОВА:</label>
+    <label style="color:var(--sec)">ССЫЛКА:</label>
     <textarea id="finalCode" rows="4" readonly></textarea>
 </div>
 
 <script>
     let currentMode = 'google';
     
-    // --- МАГИЯ: РАЗБЛОКИРОВКА ЗВУКА ---
-    // Это заставляет браузер думать, что мы уже играли звук, 
-    // поэтому последующие звуки не блокируются.
+    // --- АНЛОК ЗВУКА ---
     function unlockAudio() {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-        console.log("Audio Unlocked");
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if(!Ctx) return;
+        const ctx = new Ctx();
+        if(ctx.state === 'suspended') ctx.resume();
+        const buf = ctx.createBuffer(1,1,22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf; src.connect(ctx.destination); src.start(0);
     }
-    // Сработает при первом же клике в любом месте редактора
-    document.body.addEventListener('click', unlockAudio, { once: true });
-
+    document.body.addEventListener('click', unlockAudio, {once:true});
 
     function switchTab(mode, btn) {
         currentMode = mode;
@@ -192,82 +154,74 @@ Level Up!</textarea>
         document.getElementById('gRate').value = rate;
         document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        testGoogle(); 
+        testGoogleChain();
     }
 
-    function testGoogle() {
+    // --- УМНЫЙ ТЕСТ ЗВУКА (С ПЕРЕБОРОМ СЕРВЕРОВ) ---
+    function testGoogleChain() {
         const lang = document.getElementById('gLang').value;
+        const text = "Один два три. Тест.";
         const status = document.getElementById('status');
         
-        const tests = {
-            'ru': "Раз два три. Проверка.",
-            'en': "One two three. Check.",
-            'de': "Eins zwei drei. Test.",
-            'fr': "Un deux trois. Test.",
-            'es': "Uno dos tres. Prueba.",
-            'it': "Uno due tre. Prova.",
-            'zh-CN': "一二三。测试。",
-            'ja': "一、二、三。テスト。"
-        };
-        const text = tests[lang] || "Test.";
-        
-        // Показываем статус, что мы пытаемся
-        status.innerText = "⏳ Загрузка звука...";
+        status.innerText = "⏳ Подбор сервера...";
         status.style.color = "#aaa";
 
-        // 1. Пробуем Google Hack
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`;
-        const audio = new Audio(url);
-        audio.playbackRate = parseFloat(document.getElementById('gRate').value);
-        
-        audio.play()
-            .then(() => {
-                status.innerText = "🔊 Играет Google голос";
-                status.style.color = "#00ff00";
-            })
-            .catch(e => {
-                console.warn("Google blocked, trying fallback...");
-                // 2. Если Google не сработал — мгновенно включаем запасной вариант (встроенный)
-                fallbackTest(text);
-            });
+        // Список серверов (от лучшего к худшему)
+        const urls = [
+            `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${lang}&q=${encodeURIComponent(text)}`,
+            `https://translate.google.com/translate_tts?ie=UTF-8&client=dict-chrome-ex&tl=${lang}&q=${encodeURIComponent(text)}`, 
+            `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`
+        ];
+
+        playChain(urls, 0);
     }
 
-    function fallbackTest(text) {
+    function playChain(urls, index) {
         const status = document.getElementById('status');
-        
-        if (!window.speechSynthesis) {
-            status.innerText = "❌ Звук недоступен в этом браузере";
+        if (index >= urls.length) {
+            // Если все ссылки не сработали -> Системный голос
+            fallbackTest();
             return;
         }
 
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(text);
-        const lang = document.getElementById('gLang').value;
+        const audio = new Audio(urls[index]);
+        audio.playbackRate = parseFloat(document.getElementById('gRate').value);
         
-        // Применяем настройки
+        const p = audio.play();
+        if (p !== undefined) {
+            p.then(() => {
+                status.innerText = "✅ Google голос (Сервер " + (index+1) + ")";
+                status.style.color = "#00ff00";
+            }).catch(e => {
+                console.warn("Server " + (index+1) + " fail, trying next...");
+                playChain(urls, index + 1);
+            });
+        }
+    }
+
+    function fallbackTest() {
+        const status = document.getElementById('status');
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance("Один два три. Тест.");
+        const lang = document.getElementById('gLang').value;
         msg.rate = parseFloat(document.getElementById('gRate').value);
         msg.pitch = parseFloat(document.getElementById('gPitch').value);
         
-        // Ищем голос
-        const voices = window.speechSynthesis.getVoices();
-        const v = voices.find(x => x.lang.includes(lang));
+        const v = window.speechSynthesis.getVoices().find(x => x.lang.includes(lang));
         if(v) msg.voice = v;
 
         window.speechSynthesis.speak(msg);
-        status.innerText = "⚠️ Используется системный голос (Google недоступен)";
+        status.innerText = "⚠️ Системный голос (Google недоступен)";
         status.style.color = "orange";
     }
-
-    // Загрузка голосов для Chrome
-    if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => {};
 
     // --- ПУБЛИКАЦИЯ ---
     async function publish() {
         const btn = document.getElementById('pubBtn');
         const status = document.getElementById('status');
         btn.disabled = true;
-        status.innerText = "⏳ СБОРКА ДАННЫХ...";
-        status.style.color = "#00ffff";
+        status.innerText = "СБОРКА...";
 
         const data = {
             skyText: document.getElementById('skyMsg').value,
@@ -278,11 +232,11 @@ Level Up!</textarea>
                 pitch: parseFloat(document.getElementById('gPitch').value),
                 rate: parseFloat(document.getElementById('gRate').value)
             },
-            audioMap: {} 
+            audioMap: {}
         };
 
         try {
-            status.innerText = "🚀 ОТПРАВКА НА СЕРВЕР...";
+            status.innerText = "ЗАГРУЗКА...";
             const id = 'hp-' + Date.now().toString(36);
             
             const res = await fetch('https://publisher-server-ihqm.onrender.com/publish', {
@@ -291,11 +245,9 @@ Level Up!</textarea>
                 body: JSON.stringify({ id: id, folder: 'data', data: data })
             });
 
-            if(!res.ok) throw new Error("Ошибка сервера");
+            if(!res.ok) throw new Error("Сервер не отвечает");
 
-            status.innerText = "✅ ГОТОВО!";
-            status.style.color = "#00ff00";
-            
+            status.innerText = "ГОТОВО!";
             const url = `https://kgbgamelab.github.io/67/hp/index.html?id=${id}`;
             const iframe = `<iframe src="${url}" width="100%" height="100%" style="border:none; position:fixed; top:0; left:0;" allow="autoplay"></iframe>`;
             
@@ -303,7 +255,7 @@ Level Up!</textarea>
             document.getElementById('finalCode').value = iframe;
 
         } catch(e) {
-            status.innerText = "❌ ОШИБКА: " + e.message;
+            status.innerText = "ОШИБКА: " + e.message;
             status.style.color = "red";
         } finally {
             btn.disabled = false;
