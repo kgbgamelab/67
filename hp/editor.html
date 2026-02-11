@@ -2,97 +2,139 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>GIFT EDITOR PRO: NO VOICE EDITION</title>
+    <title>PARTY PUBLISHER PRO</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=VT323&display=swap" rel="stylesheet">
     <style>
         :root { --main: #ff00ff; --sec: #00ffff; --bg: #0a0510; }
         body { 
             background: var(--bg); color: white; font-family: 'Montserrat', sans-serif;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin:0; padding: 20px;
-            background-image: linear-gradient(rgba(255, 0, 255, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-image: 
+                linear-gradient(rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
         }
-        h1 { font-family: 'VT323'; font-size: 60px; text-shadow: 3px 3px 0 var(--main); margin-bottom: 30px; letter-spacing: 5px; }
+        h1 { 
+            font-family: 'VT323', monospace; font-size: 70px; margin-bottom: 20px; 
+            text-transform: uppercase; letter-spacing: 5px;
+            text-shadow: 4px 4px 0 var(--main), -4px -4px 0 var(--sec);
+        }
+        
         .container {
-            background: rgba(30, 10, 46, 0.8); border: 2px solid var(--main); padding: 40px;
-            border-radius: 20px; width: 600px; max-width: 95%; box-shadow: 0 0 50px rgba(255, 0, 255, 0.2);
+            background: rgba(30, 10, 46, 0.85); backdrop-filter: blur(15px);
+            border: 3px solid var(--main); padding: 40px;
+            border-radius: 30px; width: 700px; max-width: 95%;
+            box-shadow: 0 0 70px rgba(255, 0, 255, 0.3);
+            position: relative; overflow: hidden;
         }
-        label { display: block; font-family: 'VT323'; font-size: 28px; color: var(--sec); margin-bottom: 10px; }
+
+        /* Декор в углах */
+        .container::before { content: '❤'; position: absolute; top: 10px; right: 20px; font-size: 30px; color: var(--main); animation: pulse 1s infinite alternate; }
+        .container::after { content: '🎈'; position: absolute; bottom: 10px; left: 20px; font-size: 30px; animation: float 2s infinite alternate; }
+        @keyframes pulse { to { transform: scale(1.3); text-shadow: 0 0 20px var(--main); } }
+        @keyframes float { to { transform: translateY(-15px); } }
+
+        label { display: block; font-family: 'VT323'; font-size: 32px; color: var(--sec); margin-bottom: 10px; text-shadow: 2px 2px #000; }
+        
         input, textarea {
-            width: 100%; background: #000; border: 2px solid #442255; color: #fff; padding: 15px;
-            font-family: 'VT323'; font-size: 24px; border-radius: 10px; box-sizing: border-box; margin-bottom: 25px;
+            width: 100%; background: #000; border: 2px solid #442255; color: #fff; padding: 20px;
+            font-family: 'VT323'; font-size: 26px; border-radius: 15px; box-sizing: border-box; margin-bottom: 30px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,1); transition: 0.3s;
         }
-        input:focus, textarea:focus { border-color: var(--sec); outline: none; box-shadow: 0 0 15px var(--sec); }
+        input:focus, textarea:focus { border-color: var(--sec); outline: none; box-shadow: 0 0 20px var(--sec); }
         
         .pub-btn {
             background: linear-gradient(45deg, var(--main), var(--sec)); color: #000; border: none;
-            padding: 20px; font-size: 30px; font-weight: 900; font-family: 'VT323'; width: 100%; cursor: pointer;
-            border-radius: 10px; text-transform: uppercase; transition: 0.2s;
+            padding: 25px; font-size: 36px; font-weight: 900; font-family: 'VT323'; width: 100%; cursor: pointer;
+            border-radius: 15px; text-transform: uppercase; transition: 0.2s;
+            box-shadow: 0 10px 30px rgba(255, 0, 255, 0.4);
         }
-        .pub-btn:hover { transform: scale(1.02); filter: brightness(1.2); }
-        .pub-btn:disabled { filter: grayscale(1); cursor: wait; }
+        .pub-btn:hover { transform: scale(1.03); filter: brightness(1.2); }
+        .pub-btn:active { transform: scale(0.98); }
+        .pub-btn:disabled { filter: grayscale(1); cursor: wait; opacity: 0.5; }
 
-        #output { margin-top: 30px; display: none; background: #000; padding: 20px; border-radius: 10px; border: 1px dashed var(--sec); }
-        #status { text-align: center; color: var(--sec); font-family: 'VT323'; font-size: 24px; margin-top: 15px; }
+        #output { margin-top: 30px; display: none; background: #000; padding: 25px; border-radius: 15px; border: 2px dashed var(--sec); animation: slideUp 0.5s; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+
+        #status { text-align: center; color: var(--sec); font-family: 'VT323'; font-size: 28px; margin-top: 20px; min-height: 35px; }
+
+        .copy-info { color: #888; font-size: 14px; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
-<h1>🎉 PARTY BUILDER 🎉</h1>
+<h1>🎉 LEVEL GENERATOR 🎉</h1>
 
 <div class="container">
     <label>1. ТЕКСТ В НЕБЕ (БАННЕР):</label>
-    <input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!">
+    <input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!" placeholder="Любой язык поддерживается...">
 
     <label>2. ФРАЗЫ В ШАРИКАХ (ПО ОДНОЙ В СТРОКЕ):</label>
-    <textarea id="balloons" rows="6">Ты лучший!
+    <textarea id="balloons" rows="6" placeholder="Напишите поздравления здесь...">Ты лучший!
 Удачи во всем!
 Будь счастлив!
 Level Up!</textarea>
 
-    <button id="pubBtn" class="pub-btn" onclick="publish()">СОЗДАТЬ МИР</button>
+    <button id="pubBtn" class="pub-btn" onclick="publish()">ОПУБЛИКОВАТЬ МИР</button>
     <div id="status"></div>
 </div>
 
-<div id="output" style="width: 600px; max-width: 95%;">
-    <label>ВАША ССЫЛКА (IFRAME):</label>
-    <textarea id="finalCode" rows="4" readonly style="font-size: 16px; color: #0f0;"></textarea>
+<div id="output" style="width: 700px; max-width: 95%;">
+    <p class="copy-info">СКОПИРУЙТЕ ЭТОТ КОД ДЛЯ ВСТАВКИ (IFRAME):</p>
+    <textarea id="finalCode" rows="4" readonly style="font-size: 16px; color: #0f0; margin-bottom: 0;"></textarea>
 </div>
 
 <script>
     async function publish() {
         const btn = document.getElementById('pubBtn');
         const status = document.getElementById('status');
+        const output = document.getElementById('output');
+        
         btn.disabled = true;
         status.innerText = "СБОРКА ДАННЫХ...";
+        status.style.color = "var(--sec)";
 
-        const gameId = 'gift-' + Date.now().toString(36);
+        // Генерация уникального ID
+        const gameId = 'gift-' + Math.random().toString(36).substr(2, 9);
+        
+        // Подготовка объекта данных
         const data = {
             skyText: document.getElementById('skyMsg').value,
-            balloons: document.getElementById('balloons').value.split('\n').filter(x => x.trim())
+            balloons: document.getElementById('balloons').value.split('\n').filter(x => x.trim() !== '')
         };
 
         try {
-            status.innerText = "ОТПРАВКА НА СЕРВЕР...";
+            status.innerText = "ОТПРАВКА НА СЕРВЕР RENDER...";
+            
             const res = await fetch('https://publisher-server-ihqm.onrender.com/publish', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Publish-Key': 'super-secret-123' },
-                body: JSON.stringify({ id: gameId, folder: 'data', data: data })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Publish-Key': 'super-secret-123' 
+                },
+                body: JSON.stringify({ 
+                    id: gameId, 
+                    folder: 'data', 
+                    data: data 
+                })
             });
 
-            if(!res.ok) throw new Error("Сервер не ответил");
+            if(!res.ok) throw new Error("Сервер не ответил (код: " + res.status + ")");
 
-            status.innerText = "ГОТОВО!";
+            status.innerText = "ГОТОВО! ГИТХАБ ОБНОВЛЯЕТСЯ...";
+            status.style.color = "#00ff00";
+
+            // Ссылка на index.html в твоем репозитории
             const url = `https://kgbgamelab.github.io/67/hp/index.html?id=${gameId}`;
             const iframe = `<iframe src="${url}" width="100%" height="100%" style="border:none; position:fixed; top:0; left:0;" allow="autoplay"></iframe>`;
             
-            document.getElementById('output').style.display = 'block';
+            output.style.display = 'block';
             document.getElementById('finalCode').value = iframe;
 
         } catch(e) {
             status.innerText = "ОШИБКА: " + e.message;
-            status.style.color = "red";
+            status.style.color = "#ff0000";
+            console.error(e);
         } finally {
             btn.disabled = false;
         }
