@@ -160,6 +160,25 @@ Level Up!</textarea>
 <script>
     let currentMode = 'google';
     
+    // --- МАГИЯ: РАЗБЛОКИРОВКА ЗВУКА ---
+    // Это заставляет браузер думать, что мы уже играли звук, 
+    // поэтому последующие звуки не блокируются.
+    function unlockAudio() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+        console.log("Audio Unlocked");
+    }
+    // Сработает при первом же клике в любом месте редактора
+    document.body.addEventListener('click', unlockAudio, { once: true });
+
+
     function switchTab(mode, btn) {
         currentMode = mode;
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -173,37 +192,82 @@ Level Up!</textarea>
         document.getElementById('gRate').value = rate;
         document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        testGoogle(); // Авто-тест при клике
+        testGoogle(); 
     }
 
     function testGoogle() {
         const lang = document.getElementById('gLang').value;
-        // Фразы для теста на разных языках
+        const status = document.getElementById('status');
+        
         const tests = {
-            'ru': "Раз два три. Проверка звука.",
-            'en': "One two three. Sound check.",
-            'de': "Eins zwei drei. Soundcheck.",
-            'fr': "Un deux trois. Test du son.",
-            'es': "Uno dos tres. Prueba de sonido.",
-            'it': "Uno due tre. Prova audio.",
-            'zh-CN': "一二三。 音频测试。",
-            'ja': "一、二、三。 音声テスト。"
+            'ru': "Раз два три. Проверка.",
+            'en': "One two three. Check.",
+            'de': "Eins zwei drei. Test.",
+            'fr': "Un deux trois. Test.",
+            'es': "Uno dos tres. Prueba.",
+            'it': "Uno due tre. Prova.",
+            'zh-CN': "一二三。测试。",
+            'ja': "一、二、三。テスト。"
         };
         const text = tests[lang] || "Test.";
         
+        // Показываем статус, что мы пытаемся
+        status.innerText = "⏳ Загрузка звука...";
+        status.style.color = "#aaa";
+
+        // 1. Пробуем Google Hack
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`;
         const audio = new Audio(url);
-        // Применяем скорость (Pitch через Audio API менять нельзя, но в игре он будет работать)
         audio.playbackRate = parseFloat(document.getElementById('gRate').value);
-        audio.play().catch(e => alert("Ошибка! Браузер заблокировал звук. Нажмите еще раз."));
+        
+        audio.play()
+            .then(() => {
+                status.innerText = "🔊 Играет Google голос";
+                status.style.color = "#00ff00";
+            })
+            .catch(e => {
+                console.warn("Google blocked, trying fallback...");
+                // 2. Если Google не сработал — мгновенно включаем запасной вариант (встроенный)
+                fallbackTest(text);
+            });
     }
+
+    function fallbackTest(text) {
+        const status = document.getElementById('status');
+        
+        if (!window.speechSynthesis) {
+            status.innerText = "❌ Звук недоступен в этом браузере";
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance(text);
+        const lang = document.getElementById('gLang').value;
+        
+        // Применяем настройки
+        msg.rate = parseFloat(document.getElementById('gRate').value);
+        msg.pitch = parseFloat(document.getElementById('gPitch').value);
+        
+        // Ищем голос
+        const voices = window.speechSynthesis.getVoices();
+        const v = voices.find(x => x.lang.includes(lang));
+        if(v) msg.voice = v;
+
+        window.speechSynthesis.speak(msg);
+        status.innerText = "⚠️ Используется системный голос (Google недоступен)";
+        status.style.color = "orange";
+    }
+
+    // Загрузка голосов для Chrome
+    if(window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => {};
 
     // --- ПУБЛИКАЦИЯ ---
     async function publish() {
         const btn = document.getElementById('pubBtn');
         const status = document.getElementById('status');
         btn.disabled = true;
-        status.innerText = "СБОРКА ДАННЫХ...";
+        status.innerText = "⏳ СБОРКА ДАННЫХ...";
+        status.style.color = "#00ffff";
 
         const data = {
             skyText: document.getElementById('skyMsg').value,
@@ -214,17 +278,11 @@ Level Up!</textarea>
                 pitch: parseFloat(document.getElementById('gPitch').value),
                 rate: parseFloat(document.getElementById('gRate').value)
             },
-            audioMap: {} // Для Minimax
+            audioMap: {} 
         };
 
         try {
-            // Если выбран Minimax - запекаем
-            if(currentMode === 'minimax') {
-                status.innerText = "ЗАПЕКАНИЕ ГОЛОСА (MINIMAX)...";
-                // Тут логика запекания, пропустим для краткости (она такая же как в прошлый раз)
-            }
-
-            status.innerText = "ОТПРАВКА НА СЕРВЕР...";
+            status.innerText = "🚀 ОТПРАВКА НА СЕРВЕР...";
             const id = 'hp-' + Date.now().toString(36);
             
             const res = await fetch('https://publisher-server-ihqm.onrender.com/publish', {
@@ -235,7 +293,9 @@ Level Up!</textarea>
 
             if(!res.ok) throw new Error("Ошибка сервера");
 
-            status.innerText = "ГОТОВО!";
+            status.innerText = "✅ ГОТОВО!";
+            status.style.color = "#00ff00";
+            
             const url = `https://kgbgamelab.github.io/67/hp/index.html?id=${id}`;
             const iframe = `<iframe src="${url}" width="100%" height="100%" style="border:none; position:fixed; top:0; left:0;" allow="autoplay"></iframe>`;
             
@@ -243,7 +303,8 @@ Level Up!</textarea>
             document.getElementById('finalCode').value = iframe;
 
         } catch(e) {
-            status.innerText = "ОШИБКА: " + e.message;
+            status.innerText = "❌ ОШИБКА: " + e.message;
+            status.style.color = "red";
         } finally {
             btn.disabled = false;
         }
