@@ -63,7 +63,7 @@
 </head>
 <body>
 
-<h1>🎉 LEVEL GENERATOR 🎉</h1>
+<h1>🎉 ОТКРЫТКА MINECRAFT 🎉</h1>
 
 <div class="container">
     <label>1. ТЕКСТ В НЕБЕ (БАННЕР):</label>
@@ -104,7 +104,7 @@ Level Up!</textarea>
         };
 
         try {
-            status.innerText = "ОТПРАВКА НА СЕРВЕР RENDER...";
+            status.innerText = "СОХРАНЯЕМ ОТКРЫТКУ...";
             
             const res = await fetch('https://publisher-server-ihqm.onrender.com/publish', {
                 method: 'POST',
@@ -121,7 +121,7 @@ Level Up!</textarea>
 
             if(!res.ok) throw new Error("Сервер не ответил (код: " + res.status + ")");
 
-            status.innerText = "ГОТОВО! ГИТХАБ ОБНОВЛЯЕТСЯ...";
+            status.innerText = "ГОТОВО! ИГРА СОЗДАЁТСЯ...";
             status.style.color = "#00ff00";
 
             // Ссылка на index.html в твоем репозитории
