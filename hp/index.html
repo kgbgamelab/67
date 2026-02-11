@@ -114,12 +114,17 @@ let swingProgress = 0, isSwinging = false;
 let currentWeaponType = 'gun';
 let inventory = ['gun'];
 
-let skyGroup = null; // ✅ SKY group (for any-language sky text)
+// ====== WORLD BOUNDS (чтобы нельзя уйти за карту) ======
+const WORLD_SIZE = 300;                // совпадает с PlaneGeometry(300,300)
+const WORLD_HALF = WORLD_SIZE * 0.5;   // 150
+const WORLD_MARGIN = 3;                // запас от края
+const WORLD_MIN = -WORLD_HALF + WORLD_MARGIN;
+const WORLD_MAX =  WORLD_HALF - WORLD_MARGIN;
 
-// ✅ MAP + LEASH LIMITS
-const MAP_HALF = 145;       // player/mobs cannot go beyond this X/Z
-const MOB_LEASH_MAX = 55;   // if mob farther -> returns to player
-const MOB_LEASH_MIN = 35;   // when closer -> can wander again
+// ====== MOB LIMITS (чтобы мобы не уходили далеко) ======
+const MOB_HOME_RADIUS = 28;            // радиус прогулки вокруг точки спавна
+const MOB_PLAYER_MAX_DIST = 70;        // если дальше — возвращаем к дому
+const MOB_WORLD_CLAMP_MARGIN = 2.5;    // запас от края для мобов
 
 // ====== PARAMS (default) ======
 let SKY_TEXT_MSG = "HAPPY BIRTHDAY MAX";
@@ -140,10 +145,12 @@ function normalizeBalloons(v) {
   return [];
 }
 
-// ✅ Any language allowed in sky text (keep as-is, no forced map)
+// ✅ Теперь надпись в небе — ЛЮБОЙ ЯЗЫК (рисуем текст на canvas, а не кубиками).
 function sanitizeSkyText(s) {
-  const t = String(s || "").trim();
-  return t || "HAPPY BIRTHDAY MAX";
+  const raw = String(s ?? "").trim();
+  if (!raw) return "HAPPY BIRTHDAY MAX";
+  // мягкий лимит, чтобы полотно не превращалось в кашу
+  return raw.length > 40 ? raw.slice(0, 40) : raw;
 }
 
 async function loadLevelData() {
@@ -257,6 +264,8 @@ function createTexture(type) {
 }
 const textures = { grass: createTexture('grass_top'), side: createTexture('side'), wood: createTexture('wood'), planks: createTexture('planks'), face: createTexture('face'), leaves: createTexture('leaves'), chest: createTexture('chest'), skel_body: createTexture('skel_body'), skel_face: createTexture('skel_face') };
 
+let skyBannerMesh = null;
+
 function init() {
   scene = new THREE.Scene(); scene.background = new THREE.Color(0x87CEEB); scene.fog = new THREE.Fog(0x87CEEB, 20, 80);
   camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000); camera.rotation.order = 'YXZ';
@@ -274,8 +283,7 @@ function init() {
   setWeapon('gun');
   spawnLoot();
   spawnBalloons();
-  createSkyText();
-  createRainbowAndSun(); // ✅ радуга + солнышко
+  createSkyText(); // ✅ теперь canvas-banner, не обрезается и любой язык
 
   document.addEventListener('keydown', e => {
     if(isDead) return;
@@ -292,111 +300,75 @@ function init() {
   });
   document.addEventListener('mousedown', attack);
   document.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+  window.addEventListener('resize', () => {
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
   animate();
 }
 
-function createRainbowAndSun() {
-  // --- Sun (простое солнышко) ---
-  const sunGeo = new THREE.SphereGeometry(3.2, 24, 24);
-  const sunMat = new THREE.MeshStandardMaterial({ color: 0xffdd55, emissive: 0xffbb22, emissiveIntensity: 0.8 });
-  const sunMesh = new THREE.Mesh(sunGeo, sunMat);
-  sunMesh.position.set(22, 42, -55);
-  scene.add(sunMesh);
-
-  // --- Rainbow (дуга из 7 колец) ---
-  const rainbow = new THREE.Group();
-  const colors = [0xff0000,0xff7f00,0xffff00,0x00ff00,0x00aaff,0x0000ff,0x8b00ff];
-
-  for (let i = 0; i < colors.length; i++) {
-    const r = 14 - i*1.0;
-    const tube = 0.55;
-    const geo = new THREE.TorusGeometry(r, tube, 10, 48, Math.PI); // половина тора = дуга
-    const mat = new THREE.MeshStandardMaterial({ color: colors[i], emissive: colors[i], emissiveIntensity: 0.25 });
-    const arc = new THREE.Mesh(geo, mat);
-    arc.rotation.z = Math.PI;            // дуга вверх
-    arc.rotation.y = Math.PI;            // развернуть к камере
-    arc.position.set(0, 0, 0);
-    rainbow.add(arc);
-  }
-
-  rainbow.position.set(0, 34, -60);
-  rainbow.rotation.x = -0.05;
-  scene.add(rainbow);
-}
-
-// ✅ Any-language SKY TEXT rendered via canvas -> cubes
+// ✅ НОВАЯ надпись в небе: текст рисуется на canvas → texture → plane.
+// Поддерживает кириллицу/китайский/японский/любой Unicode (если есть шрифт в системе).
 function createSkyText() {
-  // remove old
-  if (skyGroup) {
-    scene.remove(skyGroup);
-    skyGroup.traverse(o => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material) o.material.dispose();
-    });
-    skyGroup = null;
+  if (skyBannerMesh) {
+    scene.remove(skyBannerMesh);
+    skyBannerMesh.geometry?.dispose?.();
+    skyBannerMesh.material?.map?.dispose?.();
+    skyBannerMesh.material?.dispose?.();
+    skyBannerMesh = null;
   }
 
-  const msg = String(SKY_TEXT_MSG || "").trim();
-  if (!msg) return;
+  const text = String(SKY_TEXT_MSG || "").trim() || "HAPPY BIRTHDAY MAX";
 
-  const cubeSize = 0.65;
-  const pixelStep = 3;
-  const threshold = 10;
-  const canvasH = 220;
-  const maxCanvasW = 1400;
-  const fontSize = 150;
-  const worldScale = 0.06;
+  const c = document.createElement("canvas");
+c.width = 3072;
+  c.height = 512;
+  const ctx = c.getContext("2d");
 
-  const canvas = document.createElement("canvas");
-  canvas.height = canvasH;
-  const ctx = canvas.getContext("2d");
+  // фон прозрачный
+  ctx.clearRect(0,0,c.width,c.height);
 
-  ctx.font = `bold ${fontSize}px VT323, Arial, sans-serif`;
-  const metrics = ctx.measureText(msg);
-  const pad = 40;
-  canvas.width = Math.min(maxCanvasW, Math.ceil(metrics.width + pad * 2));
-
-  ctx.font = `bold ${fontSize}px VT323, Arial, sans-serif`;
+  // лёгкая тень + обводка, чтобы читалось
+  const fontSize = 200;
+  ctx.font = `${fontSize}px VT323, Arial, sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.lineWidth = 10;
-  ctx.strokeStyle = "rgba(0,0,0,0.65)";
-  ctx.strokeText(msg, canvas.width / 2, canvas.height / 2);
+  ctx.lineWidth = 18;
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.fillStyle = "#ffffff";
 
-  ctx.fillStyle = "white";
-  ctx.fillText(msg, canvas.width / 2, canvas.height / 2);
-
-  const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  const w = canvas.width, h = canvas.height;
-
-  skyGroup = new THREE.Group();
-  skyGroup.name = "SKY_TEXT";
-
-  const geo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-  const mat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-
-  const baseX = 0;
-  const baseY = 40;
-  const baseZ = -40;
-
-  for (let y = 0; y < h; y += pixelStep) {
-    for (let x = 0; x < w; x += pixelStep) {
-      const i = (y * w + x) * 4;
-      const alpha = img[i + 3];
-      if (alpha > threshold) {
-        const cube = new THREE.Mesh(geo, mat);
-        const wx = baseX + (x - w / 2) * worldScale;
-        const wy = baseY + (h / 2 - y) * worldScale;
-        cube.position.set(wx, wy, baseZ);
-        skyGroup.add(cube);
-      }
-    }
+  // auto-fit: если строка очень длинная — уменьшаем размер
+  let size = fontSize;
+  while (size > 90) {
+    ctx.font = `${size}px VT323, Arial, sans-serif`;
+    const w = ctx.measureText(text).width;
+    if (w < c.width * 0.92) break;
+    size -= 10;
   }
 
-  scene.add(skyGroup);
+  ctx.font = `${size}px VT323, Arial, sans-serif`;
+  ctx.strokeText(text, c.width/2, c.height/2);
+  ctx.fillText(text, c.width/2, c.height/2);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  tex.needsUpdate = true;
+
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+  const geo = new THREE.PlaneGeometry(95, 18); // размер баннера
+  skyBannerMesh = new THREE.Mesh(geo, mat);
+
+  // позиция “в небе”
+  skyBannerMesh.position.set(0, 42, -80); // ✅ дальше от камеры = меньше шанс обреза
+
+  // чуть наклонить вниз, чтобы красиво в кадре
+  skyBannerMesh.rotation.x = -0.10;
+
+  scene.add(skyBannerMesh);
 }
 
 function createWorld() {
@@ -417,7 +389,10 @@ function createWorld() {
     const type = Math.random()>0.5?'zombie':'skeleton';
     const m = createMob(type, type);
     m.position.set(Math.random()*60-30, 0, Math.random()*60-30);
-    m.userData.home = m.position.clone(); // ✅ remember spawn/home
+
+    // ✅ запоминаем "дом" моба (точка спавна)
+    m.userData.home = m.position.clone();
+
     scene.add(m); targets.push({obj: m});
   }
 }
@@ -530,7 +505,9 @@ function createMob(text, type) {
 
   mob.add(body, head, armL, armR, legL, legR, hat);
   mob.userData = { parts: {armL, armR, legL, legR, body, head}, isAggro: false, aggroTimer: 0, type: type || 'zombie', shotTimer: 0,
-    walkTimer: Math.random() * 2, walkDir: new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize() };
+    walkTimer: Math.random() * 2, walkDir: new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize(),
+    home: null // ✅ заполним после установки позиции
+  };
   return mob;
 }
 
@@ -658,8 +635,10 @@ function updatePhysics(delta) {
   if(direction.length() > 0) direction.normalize().multiplyScalar(player.speed * delta);
   if(player.onGround && move.jump) { player.vel.y = 12; player.onGround = false; }
   player.vel.y -= 30 * delta;
+
   let nextX = camera.position.x + (direction.x + player.vel.x * delta);
   let nextZ = camera.position.z + (direction.z + player.vel.z * delta);
+
   let canMoveX = true, canMoveZ = true;
   const wallT = 0.8;
   for(let h of houses) {
@@ -671,18 +650,22 @@ function updatePhysics(delta) {
     if (camera.position.x > h.bounds.minX && camera.position.x < h.bounds.maxX && nextZ > h.bounds.minZ - wallT && nextZ < h.bounds.minZ + wallT) canMoveZ = false;
     if (camera.position.x > h.bounds.minX && camera.position.x < h.bounds.maxX && nextZ > h.bounds.maxZ - wallT && nextZ < h.bounds.maxZ + wallT) canMoveZ = false;
   }
+
+  // ✅ ОГРАНИЧЕНИЕ КАРТЫ: нельзя выйти за пределы поля
+  nextX = Math.max(WORLD_MIN, Math.min(WORLD_MAX, nextX));
+  nextZ = Math.max(WORLD_MIN, Math.min(WORLD_MAX, nextZ));
+
   if(canMoveX) camera.position.x = nextX;
   if(canMoveZ) camera.position.z = nextZ;
 
-  // ✅ map clamp (player)
-  camera.position.x = Math.max(-MAP_HALF, Math.min(MAP_HALF, camera.position.x));
-  camera.position.z = Math.max(-MAP_HALF, Math.min(MAP_HALF, camera.position.z));
-
   camera.position.y += player.vel.y * delta;
   if(camera.position.y < 1.7) { camera.position.y = 1.7; player.vel.y = 0; player.onGround = true; }
+
   player.vel.x *= 0.9; player.vel.z *= 0.9;
+
   const house = checkHouseProtection(camera.position);
   document.getElementById('house-status').style.display = house ? 'block' : 'none';
+
   const stepInterval = move.sprint ? 300 : 500;
   if(direction.length() > 0 && player.onGround && Date.now() - stepTimer > stepInterval) {
     playSound('step'); stepTimer = Date.now();
@@ -693,27 +676,46 @@ function animate() {
   requestAnimationFrame(animate); if(isDead) return;
   const delta = clock.getDelta(); const now = Date.now() / 1000;
   updatePhysics(delta);
+
   const offset = weaponGroup.userData.offset || new THREE.Vector3(0.5, -0.5, -0.8);
   const bob = (move.fwd || move.bwd) ? Math.sin(now*(move.sprint?18:12))*0.03 : 0;
   weaponGroup.position.copy(camera.position); weaponGroup.quaternion.copy(camera.quaternion);
   weaponGroup.translateX(offset.x); weaponGroup.translateY(offset.y + bob); weaponGroup.translateZ(offset.z);
+
   if(isSwinging) {
-    swingProgress += delta * 15; if(swingProgress >= Math.PI) { swingProgress = 0; isSwinging = false; weaponGroup.rotation.x = 0; }
+    swingProgress += delta * 15;
+    if(swingProgress >= Math.PI) { swingProgress = 0; isSwinging = false; weaponGroup.rotation.x = 0; }
     else {
       if(currentWeaponType === 'gun') weaponGroup.position.z += Math.sin(swingProgress)*0.1;
       else weaponGroup.rotateX(-Math.sin(swingProgress));
     }
   } else weaponGroup.rotateX(currentWeaponType !== 'gun' ? Math.PI/8 : 0);
 
+  // ===== MOB AI + LIMITS =====
   targets.forEach(t => {
     const mob = t.obj;
-    const dist = mob.position.distanceTo(camera.position);
+    const distToPlayer = mob.position.distanceTo(camera.position);
+
+    // дом
+    const home = mob.userData.home || mob.position.clone();
+
+    // если моб улетел далеко — мягко возвращаем (или телепортим чуть ближе к дому)
+    if (distToPlayer > MOB_PLAYER_MAX_DIST) {
+      const dirHome = home.clone().sub(mob.position);
+      if (dirHome.length() > 0.001) {
+        dirHome.normalize();
+        mob.position.add(dirHome.multiplyScalar(8 * delta));
+      } else {
+        mob.position.copy(home);
+      }
+    }
 
     if(mob.userData.isAggro) {
       mob.userData.aggroTimer -= delta;
       if (mob.userData.aggroTimer <= 0) mob.userData.isAggro = false;
+
       mob.lookAt(camera.position.x, 0, camera.position.z);
-      if(dist > 2.0) {
+      if(distToPlayer > 2.0) {
         mob.translateZ(6 * delta);
       } else {
         if(Math.random() < 0.03) {
@@ -722,30 +724,28 @@ function animate() {
         }
       }
     } else {
+      // гуляем вокруг дома, не уходим далеко
       mob.userData.walkTimer -= delta;
       if(mob.userData.walkTimer <= 0) {
         mob.userData.walkTimer = Math.random() * 3 + 1;
-        mob.userData.walkDir = new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+
+        // направление: либо случайное, либо назад к дому, если вышли за радиус
+        const toHome = home.clone().sub(mob.position);
+        const dHome = toHome.length();
+
+        if (dHome > MOB_HOME_RADIUS) {
+          mob.userData.walkDir = toHome.normalize();
+        } else {
+          mob.userData.walkDir = new THREE.Vector3(Math.random()-0.5, 0, Math.random()-0.5).normalize();
+        }
       }
       mob.lookAt(mob.position.clone().add(mob.userData.walkDir));
       mob.translateZ(1.5 * delta);
-
-      // ✅ leash: don't wander too far from player
-      const d = mob.position.distanceTo(camera.position);
-      if (d > MOB_LEASH_MAX) {
-        const toPlayer = camera.position.clone().sub(mob.position);
-        toPlayer.y = 0;
-        if (toPlayer.lengthSq() > 0.0001) {
-          toPlayer.normalize();
-          mob.lookAt(mob.position.clone().add(toPlayer));
-          mob.translateZ(4.0 * delta);
-        }
-      }
     }
 
-    // ✅ map clamp (mobs)
-    mob.position.x = Math.max(-MAP_HALF, Math.min(MAP_HALF, mob.position.x));
-    mob.position.z = Math.max(-MAP_HALF, Math.min(MAP_HALF, mob.position.z));
+    // ✅ КЛЭМП моба по карте (чтобы не уходил за край)
+    mob.position.x = Math.max(WORLD_MIN + MOB_WORLD_CLAMP_MARGIN, Math.min(WORLD_MAX - MOB_WORLD_CLAMP_MARGIN, mob.position.x));
+    mob.position.z = Math.max(WORLD_MIN + MOB_WORLD_CLAMP_MARGIN, Math.min(WORLD_MAX - MOB_WORLD_CLAMP_MARGIN, mob.position.z));
 
     const p = mob.userData.parts; const w = Math.sin(now * (mob.userData.isAggro ? 15 : 5));
     if(mob.userData.type !== 'skeleton') { p.armL.rotation.x = w; p.armR.rotation.x = -w; }
@@ -756,7 +756,13 @@ function animate() {
   balloons.forEach(b => b.position.y += Math.sin(Date.now()*0.002)*0.01);
   cards.forEach(c => c.rotation.y += 0.01);
 
-  for(let i=particles.length-1; i>=0; i--) { const p = particles[i]; p.m.position.add(p.v); p.v.y += 0.01; if(p.m.position.y > 10) { scene.remove(p.m); particles.splice(i,1); } }
+  for(let i=particles.length-1; i>=0; i--) {
+    const p = particles[i];
+    p.m.position.add(p.v);
+    p.v.y += 0.01;
+    if(p.m.position.y > 10) { scene.remove(p.m); particles.splice(i,1); }
+  }
+
   const time = now * 0.05; scene.background.setHSL(0.6, 0.5, 0.5 + Math.sin(time)*0.2);
   renderer.render(scene, camera);
 }
