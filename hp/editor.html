@@ -2,253 +2,89 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ULTIMATE PARTY EDITOR (FIXED)</title>
+    <title>GIFT EDITOR PRO: NO VOICE EDITION</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800&family=VT323&display=swap" rel="stylesheet">
     <style>
-        :root { --main: #ff00ff; --sec: #00ffff; --bg: #120520; }
+        :root { --main: #ff00ff; --sec: #00ffff; --bg: #0a0510; }
         body { 
             background: var(--bg); color: white; font-family: 'Montserrat', sans-serif;
             display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin:0; padding: 20px;
-            background-image: linear-gradient(rgba(255, 0, 255, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background-image: linear-gradient(rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
-        h1 { 
-            font-family: 'VT323', monospace; font-size: 60px; margin-bottom: 20px; 
-            text-transform: uppercase; letter-spacing: 4px;
-            text-shadow: 3px 3px 0 var(--sec), -3px -3px 0 var(--main);
-        }
+        h1 { font-family: 'VT323'; font-size: 60px; text-shadow: 3px 3px 0 var(--main); margin-bottom: 30px; letter-spacing: 5px; }
         .container {
-            display: flex; gap: 30px; width: 1100px; max-width: 95%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); padding: 30px;
-            border: 2px solid var(--main); border-radius: 20px;
-            box-shadow: 0 0 50px rgba(255, 0, 255, 0.2);
+            background: rgba(30, 10, 46, 0.8); border: 2px solid var(--main); padding: 40px;
+            border-radius: 20px; width: 600px; max-width: 95%; box-shadow: 0 0 50px rgba(255, 0, 255, 0.2);
         }
-        .col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-        h2 { font-family: 'VT323'; color: var(--sec); border-bottom: 2px solid #444; margin: 0; padding-bottom: 10px; font-size: 30px; }
-        label { display: block; font-size: 14px; color: #aaa; margin-bottom: 5px; font-weight: bold; }
-        input, textarea, select {
-            width: 100%; background: #0a0510; border: 2px solid #442255; color: white; padding: 15px;
-            font-family: 'VT323'; font-size: 22px; border-radius: 8px; box-sizing: border-box;
+        label { display: block; font-family: 'VT323'; font-size: 28px; color: var(--sec); margin-bottom: 10px; }
+        input, textarea {
+            width: 100%; background: #000; border: 2px solid #442255; color: #fff; padding: 15px;
+            font-family: 'VT323'; font-size: 24px; border-radius: 10px; box-sizing: border-box; margin-bottom: 25px;
         }
-        input:focus, textarea:focus, select:focus { border-color: var(--sec); outline: none; }
+        input:focus, textarea:focus { border-color: var(--sec); outline: none; box-shadow: 0 0 15px var(--sec); }
         
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
-        .tab { 
-            flex: 1; padding: 10px; background: #221133; border: 1px solid #442255; cursor: pointer; 
-            text-align: center; font-weight: bold; border-radius: 5px; color: #888;
-        }
-        .tab.active { background: var(--main); color: white; border-color: white; box-shadow: 0 0 15px var(--main); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .emo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .emo-btn {
-            background: #221133; border: 1px solid var(--sec); color: var(--sec); padding: 10px;
-            cursor: pointer; font-family: 'VT323'; font-size: 20px; border-radius: 5px; transition: 0.2s;
-        }
-        .emo-btn.active { background: var(--sec); color: black; font-weight: bold; }
-
-        .test-btn { background: #333; color: white; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; border-radius: 8px; margin-top: 10px; }
         .pub-btn {
-            background: linear-gradient(45deg, var(--main), var(--sec)); color: black; border: none;
-            padding: 20px; font-size: 24px; font-weight: 900; width: 100%; cursor: pointer;
-            border-radius: 10px; margin-top: 20px; text-transform: uppercase;
+            background: linear-gradient(45deg, var(--main), var(--sec)); color: #000; border: none;
+            padding: 20px; font-size: 30px; font-weight: 900; font-family: 'VT323'; width: 100%; cursor: pointer;
+            border-radius: 10px; text-transform: uppercase; transition: 0.2s;
         }
-        #output { margin-top: 20px; display: none; background: black; padding: 15px; border-radius: 10px; border: 1px dashed var(--sec); }
-        #status { text-align: center; color: var(--sec); margin-top: 10px; font-weight: bold; }
+        .pub-btn:hover { transform: scale(1.02); filter: brightness(1.2); }
+        .pub-btn:disabled { filter: grayscale(1); cursor: wait; }
+
+        #output { margin-top: 30px; display: none; background: #000; padding: 20px; border-radius: 10px; border: 1px dashed var(--sec); }
+        #status { text-align: center; color: var(--sec); font-family: 'VT323'; font-size: 24px; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-<h1>🎉 GIFT EDITOR PRO 🎉</h1>
+<h1>🎉 PARTY BUILDER 🎉</h1>
 
 <div class="container">
-    <div class="col">
-        <h2>1. НАПОЛНЕНИЕ</h2>
-        <div><label>Текст в небе:</label><input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!"></div>
-        <div style="flex:1; display:flex; flex-direction:column;">
-            <label>Фразы (по одной в строке):</label>
-            <textarea id="balloons" style="flex:1; resize:none;">Ты лучший!
+    <label>1. ТЕКСТ В НЕБЕ (БАННЕР):</label>
+    <input type="text" id="skyMsg" value="С ДНЕМ РОЖДЕНИЯ!">
+
+    <label>2. ФРАЗЫ В ШАРИКАХ (ПО ОДНОЙ В СТРОКЕ):</label>
+    <textarea id="balloons" rows="6">Ты лучший!
 Удачи во всем!
 Будь счастлив!
 Level Up!</textarea>
-        </div>
-    </div>
 
-    <div class="col">
-        <h2>2. НАСТРОЙКИ ГОЛОСА</h2>
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('google', this)">GOOGLE (БЕСПЛАТНО)</div>
-            <div class="tab" onclick="switchTab('minimax', this)">MINIMAX (API)</div>
-        </div>
-
-        <div id="tab-google" class="tab-content active">
-            <label>Язык:</label>
-            <select id="gLang">
-                <option value="ru">🇷🇺 Русский</option>
-                <option value="en">🇺🇸 Английский</option>
-                <option value="de">🇩🇪 Немецкий</option>
-                <option value="fr">🇫🇷 Французский</option>
-                <option value="es">🇪🇸 Испанский</option>
-                <option value="it">🇮🇹 Итальянский</option>
-                <option value="zh-CN">🇨🇳 Китайский</option>
-                <option value="ja">🇯🇵 Японский</option>
-            </select>
-
-            <label style="margin-top:15px">Интонация:</label>
-            <div class="emo-grid">
-                <div class="emo-btn active" onclick="setPreset(1, 1, this)">😐 Обычный</div>
-                <div class="emo-btn" onclick="setPreset(1.2, 1.1, this)">😄 Радость</div>
-                <div class="emo-btn" onclick="setPreset(1.4, 1.3, this)">🤪 Мультик</div>
-                <div class="emo-btn" onclick="setPreset(0.8, 0.9, this)">😎 Эпичный</div>
-            </div>
-            
-            <input type="hidden" id="gPitch" value="1">
-            <input type="hidden" id="gRate" value="1">
-            <button class="test-btn" onclick="testGoogleChain()">🔊 ПРОСЛУШАТЬ (ТЕСТ)</button>
-        </div>
-
-        <div id="tab-minimax" class="tab-content">
-            <label>API Key:</label><input type="password" id="mmKey" placeholder="Ключ Minimax...">
-            <label>Group ID:</label><input type="text" id="mmGroup">
-            <label>Voice ID:</label><input type="text" id="mmVoice" value="male-qn-qingse">
-            <button class="test-btn" onclick="testMinimax()">🔊 ТЕСТ (API)</button>
-        </div>
-
-        <button id="pubBtn" class="pub-btn" onclick="publish()">🎁 СОЗДАТЬ ИГРУ</button>
-        <div id="status"></div>
-    </div>
+    <button id="pubBtn" class="pub-btn" onclick="publish()">СОЗДАТЬ МИР</button>
+    <div id="status"></div>
 </div>
 
-<div id="output" style="width: 1100px; max-width: 95%;">
-    <label style="color:var(--sec)">ССЫЛКА:</label>
-    <textarea id="finalCode" rows="4" readonly></textarea>
+<div id="output" style="width: 600px; max-width: 95%;">
+    <label>ВАША ССЫЛКА (IFRAME):</label>
+    <textarea id="finalCode" rows="4" readonly style="font-size: 16px; color: #0f0;"></textarea>
 </div>
 
 <script>
-    let currentMode = 'google';
-    
-    // --- АНЛОК ЗВУКА ---
-    function unlockAudio() {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if(!Ctx) return;
-        const ctx = new Ctx();
-        if(ctx.state === 'suspended') ctx.resume();
-        const buf = ctx.createBuffer(1,1,22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf; src.connect(ctx.destination); src.start(0);
-    }
-    document.body.addEventListener('click', unlockAudio, {once:true});
-
-    function switchTab(mode, btn) {
-        currentMode = mode;
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById('tab-'+mode).classList.add('active');
-    }
-
-    function setPreset(pitch, rate, btn) {
-        document.getElementById('gPitch').value = pitch;
-        document.getElementById('gRate').value = rate;
-        document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        testGoogleChain();
-    }
-
-    // --- УМНЫЙ ТЕСТ ЗВУКА (С ПЕРЕБОРОМ СЕРВЕРОВ) ---
-    function testGoogleChain() {
-        const lang = document.getElementById('gLang').value;
-        const text = "Один два три. Тест.";
-        const status = document.getElementById('status');
-        
-        status.innerText = "⏳ Подбор сервера...";
-        status.style.color = "#aaa";
-
-        // Список серверов (от лучшего к худшему)
-        const urls = [
-            `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${lang}&q=${encodeURIComponent(text)}`,
-            `https://translate.google.com/translate_tts?ie=UTF-8&client=dict-chrome-ex&tl=${lang}&q=${encodeURIComponent(text)}`, 
-            `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${lang}&q=${encodeURIComponent(text)}`
-        ];
-
-        playChain(urls, 0);
-    }
-
-    function playChain(urls, index) {
-        const status = document.getElementById('status');
-        if (index >= urls.length) {
-            // Если все ссылки не сработали -> Системный голос
-            fallbackTest();
-            return;
-        }
-
-        const audio = new Audio(urls[index]);
-        audio.playbackRate = parseFloat(document.getElementById('gRate').value);
-        
-        const p = audio.play();
-        if (p !== undefined) {
-            p.then(() => {
-                status.innerText = "✅ Google голос (Сервер " + (index+1) + ")";
-                status.style.color = "#00ff00";
-            }).catch(e => {
-                console.warn("Server " + (index+1) + " fail, trying next...");
-                playChain(urls, index + 1);
-            });
-        }
-    }
-
-    function fallbackTest() {
-        const status = document.getElementById('status');
-        if (!window.speechSynthesis) return;
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance("Один два три. Тест.");
-        const lang = document.getElementById('gLang').value;
-        msg.rate = parseFloat(document.getElementById('gRate').value);
-        msg.pitch = parseFloat(document.getElementById('gPitch').value);
-        
-        const v = window.speechSynthesis.getVoices().find(x => x.lang.includes(lang));
-        if(v) msg.voice = v;
-
-        window.speechSynthesis.speak(msg);
-        status.innerText = "⚠️ Системный голос (Google недоступен)";
-        status.style.color = "orange";
-    }
-
-    // --- ПУБЛИКАЦИЯ ---
     async function publish() {
         const btn = document.getElementById('pubBtn');
         const status = document.getElementById('status');
         btn.disabled = true;
-        status.innerText = "СБОРКА...";
+        status.innerText = "СБОРКА ДАННЫХ...";
 
+        const gameId = 'gift-' + Date.now().toString(36);
         const data = {
             skyText: document.getElementById('skyMsg').value,
-            balloons: document.getElementById('balloons').value.split('\n').filter(x => x.trim()),
-            mode: currentMode,
-            googleSettings: {
-                lang: document.getElementById('gLang').value,
-                pitch: parseFloat(document.getElementById('gPitch').value),
-                rate: parseFloat(document.getElementById('gRate').value)
-            },
-            audioMap: {}
+            balloons: document.getElementById('balloons').value.split('\n').filter(x => x.trim())
         };
 
         try {
-            status.innerText = "ЗАГРУЗКА...";
-            const id = 'hp-' + Date.now().toString(36);
-            
+            status.innerText = "ОТПРАВКА НА СЕРВЕР...";
             const res = await fetch('https://publisher-server-ihqm.onrender.com/publish', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Publish-Key': 'super-secret-123' },
-                body: JSON.stringify({ id: id, folder: 'data', data: data })
+                body: JSON.stringify({ id: gameId, folder: 'data', data: data })
             });
 
-            if(!res.ok) throw new Error("Сервер не отвечает");
+            if(!res.ok) throw new Error("Сервер не ответил");
 
             status.innerText = "ГОТОВО!";
-            const url = `https://kgbgamelab.github.io/67/hp/index.html?id=${id}`;
+            const url = `https://kgbgamelab.github.io/67/hp/index.html?id=${gameId}`;
             const iframe = `<iframe src="${url}" width="100%" height="100%" style="border:none; position:fixed; top:0; left:0;" allow="autoplay"></iframe>`;
             
             document.getElementById('output').style.display = 'block';
